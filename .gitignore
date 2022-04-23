@@ -1,0 +1,13 @@
+build
+.DS_Store
+project.xcworkspace
+xcuserdata
+
+__pycache__
+
+.build.config.json
+.cmd*
+.settings
+*.xcconfig
+
+*.iml
