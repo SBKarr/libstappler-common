@@ -34,7 +34,7 @@ void PriorityQueue_unlock_std_mutex(void *);
 
 // Real-time task priority queue
 // It's designed for relatively low pending tasks (below PreallocatedNodes),
-// with relatively low (mostly high so, below zero) tasks with priority different from zero
+// with relatively low tasks with priority different from zero
 template <typename Value>
 class PriorityQueue {
 public:

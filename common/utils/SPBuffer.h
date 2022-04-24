@@ -20,8 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 **/
 
-#ifndef COMMON_STREAM_SPBUFFER_H_
-#define COMMON_STREAM_SPBUFFER_H_
+#ifndef COMMON_UTILS_SPBUFFER_H_
+#define COMMON_UTILS_SPBUFFER_H_
 
 #include "SPIOBuffer.h"
 #include "SPStringView.h"
@@ -353,4 +353,4 @@ struct BufferTraits<StackBuffer<Size>> {
 
 }
 
-#endif /* COMMON_STREAM_SPBUFFER_H_ */
+#endif /* COMMON_UTILS_SPBUFFER_H_ */

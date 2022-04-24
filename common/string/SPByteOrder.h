@@ -20,8 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 **/
 
-#ifndef COMMON_UTILS_SPBYTEORDER_H_
-#define COMMON_UTILS_SPBYTEORDER_H_
+#ifndef COMMON_STRING_SPBYTEORDER_H_
+#define COMMON_STRING_SPBYTEORDER_H_
 
 #include <bit>
 #include <algorithm>
@@ -259,4 +259,4 @@ struct ConverterTraits<Endian::Little, T> : LittleConverter<T> { };
 
 }
 
-#endif /* COMMON_UTILS_SPBYTEORDER_H_ */
+#endif /* COMMON_STRING_SPBYTEORDER_H_ */

@@ -20,10 +20,18 @@
 
 STAPPLER_ROOT ?= ../..
 
+# force to rebuild if this makefile changed
+LOCAL_MAKEFILE := $(lastword $(MAKEFILE_LIST))
+
 LOCAL_OUTDIR := stappler-build
 LOCAL_EXECUTABLE := testapp
 
 LOCAL_TOOLKIT := $(abspath $(STAPPLER_ROOT)/common.mk)
+
+LOCAL_MODULES := \
+	common_brotli_lib \
+	common_data \
+	common_filesystem
 
 LOCAL_ROOT = .
 

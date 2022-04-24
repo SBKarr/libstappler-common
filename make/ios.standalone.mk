@@ -46,13 +46,13 @@ all: $(BUILD_LIBRARY)
 $(BUILD_LIBRARY): $(BUILD_OBJS)
 	$(GLOBAL_QUIET_LINK) $(GLOBAL_LIBTOOL) -static -no_warning_for_no_symbols $(BUILD_OBJS) $(OSTYPE_STAPPLER_LIBS_LIST) -o $(BUILD_LIBRARY)
 
-$(BUILD_OUTDIR)/%.o: /%.cpp $(TOOLKIT_H_GCH) $(TOOLKIT_GCH)
+$(BUILD_OUTDIR)/%.o: /%.cpp $(TOOLKIT_H_GCH) $(TOOLKIT_GCH) $(TOOLKIT_MODULES)
 	$(call sp_compile_cpp,$(BUILD_CXXFLAGS))
 
-$(BUILD_OUTDIR)/%.o: /%.mm $(TOOLKIT_H_GCH) $(TOOLKIT_GCH)
+$(BUILD_OUTDIR)/%.o: /%.mm $(TOOLKIT_H_GCH) $(TOOLKIT_GCH) $(TOOLKIT_MODULES)
 	$(call sp_compile_mm,$(BUILD_CXXFLAGS))
 
-$(BUILD_OUTDIR)/%.o: /%.c $(TOOLKIT_H_GCH) $(TOOLKIT_GCH)
+$(BUILD_OUTDIR)/%.o: /%.c $(TOOLKIT_H_GCH) $(TOOLKIT_GCH) $(TOOLKIT_MODULES)
 	$(call sp_compile_c,$(BUILD_CFLAGS))
 
 .PHONY: all

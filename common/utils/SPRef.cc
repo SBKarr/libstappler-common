@@ -31,14 +31,21 @@ THE SOFTWARE.
 #include <execinfo.h>
 #include <cxxabi.h>
 
+#ifdef MODULE_COMMON_FILESYSTEM
+#include "SPFilesystem.h"
+#endif
+
 namespace stappler::memleak {
 
 static constexpr int LinuxBacktraceSize = 128;
 static constexpr int LinuxBacktraceOffset = 2;
 
 static std::string filterBacktracePath(StringView path) {
+#ifdef MODULE_COMMON_FILESYSTEM
+	return filepath::replace<memory::StandartInterface>(path, filesystem::currentDir<memory::StandartInterface>(), "/");
+#else
 	return path.str<memory::StandartInterface>();
-	// return filepath::replace(bt_syms[i], filesystem::currentDir(), "/");
+#endif
 }
 
 static std::vector<std::string> getBacktrace() {

@@ -20,8 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 **/
 
-#ifndef COMPONENTS_COMMON_CORE_STRING_SPHASH_H_
-#define COMPONENTS_COMMON_CORE_STRING_SPHASH_H_
+#ifndef COMMON_STRING_SPHASH_H_
+#define COMMON_STRING_SPHASH_H_
 
 #include <stdint.h>
 
@@ -190,4 +190,4 @@ inline constexpr size_t hashSize(const char* str, size_t len, uint64_t seed = 0)
 
 }
 
-#endif /* COMPONENTS_COMMON_CORE_STRING_SPHASH_H_ */
+#endif /* COMMON_STRING_SPHASH_H_ */

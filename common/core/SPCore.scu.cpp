@@ -1,6 +1,3 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-
 /**
 Copyright (c) 2017-2022 Roman Katuntsev <sbkarr@stappler.org>
 
@@ -47,3 +44,16 @@ THE SOFTWARE.
 #include "SPMemUserData.cc"
 #include "SPTime.cc"
 #include "SPRef.cc"
+#include "SPLog.cc"
+
+#ifdef MODULE_COMMON_DATA
+#include "SPData.cc"
+#endif
+
+#ifdef MODULE_COMMON_FILESYSTEM
+#include "SPFilepath.cc"
+#include "SPFilesystem.cc"
+#include "platform/SPFilesystem-linux.cc"
+#include "SPFilesystemNativeMingw.cc"
+#include "SPFilesystemNativePosix.cc"
+#endif

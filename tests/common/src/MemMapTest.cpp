@@ -80,7 +80,7 @@ struct MemMapTest : MemPoolTest {
 
 			auto it = values.lower_bound(4);
 			std::cout << *(--it) << "\n";
-			return  *(--it) == 3;
+			return  *(it) == 3;
 		});
 
 		runTest(stream, "persistent test", count, passed, [&] {

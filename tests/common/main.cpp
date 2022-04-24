@@ -25,10 +25,11 @@ THE SOFTWARE.
 
 #include "SPCommon.h"
 #include "SPTime.h"
+#include "SPData.h"
 #include "Test.h"
 
 static constexpr auto HELP_STRING(
-R"HelpString(sptest <options> <command>
+R"HelpString(sptest <options> <test-name|all>
 Options are one of:
     -v (--verbose)
     -h (--help))HelpString");
@@ -162,9 +163,44 @@ struct TimeTest : Test {
 	}
 } _TimeTest;
 
-using namespace stappler;
+int parseOptionSwitch(Value &ret, char c, const char *str) {
+	if (c == 'h') {
+		ret.setBool(true, "help");
+	} else if (c == 'v') {
+		ret.setBool(true, "verbose");
+	}
+	return 1;
+}
+
+int parseOptionString(Value &ret, const StringView &str, int argc, const char * argv[]) {
+	if (str == "help") {
+		ret.setBool(true, "help");
+	} else if (str == "verbose") {
+		ret.setBool(true, "verbose");
+	} else if (str == "gencbor") {
+		ret.setBool(true, "gencbor");
+	}
+	return 1;
+}
 
 SP_EXTERN_C int _spMain(argc, argv) {
+	Value opts = data::parseCommandLineOptions<Interface>(argc, argv,
+			&parseOptionSwitch, &parseOptionString);
+	if (opts.getBool("help")) {
+		std::cout << HELP_STRING << "\n";
+		return 0;
+	}
+
+	if (opts.getBool("verbose")) {
+#if MODULE_COMMON_FILESYSTEM
+		std::cout << " Current work dir: " << stappler::filesystem::currentDir<Interface>() << "\n";
+		std::cout << " Documents dir: " << stappler::filesystem::documentsPathReadOnly<Interface>() << "\n";
+		std::cout << " Cache dir: " << stappler::filesystem::cachesPathReadOnly<Interface>() << "\n";
+		std::cout << " Writable dir: " << stappler::filesystem::writablePathReadOnly<Interface>() << "\n";
+#endif
+		std::cout << " Options: " << stappler::data::EncodeFormat::Pretty << opts << "\n";
+	}
+
 	auto mempool = memory::pool::create();
 	memory::pool::push(mempool);
 

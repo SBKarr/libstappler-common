@@ -29,6 +29,10 @@ THE SOFTWARE.
 #include "SPSpanView.h"
 #include "SPTime.h"
 
+#ifdef MODULE_COMMON_DATA
+#include "SPData.h"
+#endif
+
 namespace stappler::mem_pool {
 
 namespace pool = memory::pool;
@@ -157,5 +161,73 @@ inline bool emplace_ordered(Vector<T> &vec, T val) {
 }
 
 }
+
+
+#ifdef MODULE_COMMON_DATA
+
+namespace stappler::mem_pool {
+
+using Value = stappler::data::ValueTemplate<stappler::memory::PoolInterface>;
+using Array = Value::ArrayType;
+using Dictionary = Value::DictionaryType;
+using EncodeFormat = stappler::data::EncodeFormat;
+
+inline auto writeData(const Value &data, EncodeFormat fmt = EncodeFormat()) -> Bytes {
+	return stappler::data::EncodeTraits<stappler::memory::PoolInterface>::write(data, fmt);
+}
+
+inline bool writeData(std::ostream &stream, const Value &data, EncodeFormat fmt = EncodeFormat()) {
+	return stappler::data::EncodeTraits<stappler::memory::PoolInterface>::write(stream, data, fmt);
+}
+
+inline bool emplace_ordered(Vector<Value> &vec, const Value &val) {
+	auto lb = std::lower_bound(vec.begin(), vec.end(), val, [&] (const Value &l, const Value &r) {
+		return l.getInteger() < r.getInteger();
+	});
+	if (lb == vec.end()) {
+		vec.emplace_back(val);
+		return true;
+	} else if (*lb != val) {
+		vec.emplace(lb, val);
+		return true;
+	}
+	return false;
+}
+
+}
+
+
+namespace stappler::mem_std {
+
+using Value = stappler::data::ValueTemplate<stappler::memory::StandartInterface>;
+using Array = Value::ArrayType;
+using Dictionary = Value::DictionaryType;
+using EncodeFormat = stappler::data::EncodeFormat;
+
+inline auto writeData(const Value &data, EncodeFormat fmt = EncodeFormat()) -> Bytes {
+	return stappler::data::EncodeTraits<stappler::memory::StandartInterface>::write(data, fmt);
+}
+
+inline bool writeData(std::ostream &stream, const Value &data, EncodeFormat fmt = EncodeFormat()) {
+	return stappler::data::EncodeTraits<stappler::memory::StandartInterface>::write(stream, data, fmt);
+}
+
+inline bool emplace_ordered(Vector<Value> &vec, const Value &val) {
+	auto lb = std::lower_bound(vec.begin(), vec.end(), val, [&] (const Value &l, const Value &r) {
+		return l.getInteger() < r.getInteger();
+	});
+	if (lb == vec.end()) {
+		vec.emplace_back(val);
+		return true;
+	} else if (*lb != val) {
+		vec.emplace(lb, val);
+		return true;
+	}
+	return false;
+}
+
+}
+
+#endif
 
 #endif /* COMMON_CORE_SPMEMORY_H_ */

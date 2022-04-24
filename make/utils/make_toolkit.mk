@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Roman Katuntsev <sbkarr@stappler.org>
+# Copyright (c) 2018-2022 Roman Katuntsev <sbkarr@stappler.org>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-$(TOOLKIT_NAME)_LIBS := -L$(GLOBAL_ROOT)/$(OSTYPE_PREBUILT_PATH) $(OSTYPE_$(TOOLKIT_NAME)_LIBS) $(LDFLAGS)
+$(TOOLKIT_NAME)_LIBS := -L$(GLOBAL_ROOT)/$(OSTYPE_PREBUILT_PATH) $(OSTYPE_$(TOOLKIT_NAME)_LIBS) $($(TOOLKIT_NAME)_LIBS) $(LDFLAGS)
 $(TOOLKIT_NAME)_SRCS := $(call sp_toolkit_source_list, $($(TOOLKIT_NAME)_SRCS_DIRS), $($(TOOLKIT_NAME)_SRCS_OBJS))\
 	$(call sp_toolkit_source_list_abs, $($(TOOLKIT_NAME)_SRCS_DIRS_ABS), $($(TOOLKIT_NAME)_SRCS_OBJS_ABS))
 $(TOOLKIT_NAME)_INCLUDES := $(call sp_toolkit_include_list, $($(TOOLKIT_NAME)_INCLUDES_DIRS), $($(TOOLKIT_NAME)_INCLUDES_OBJS))
@@ -30,14 +30,28 @@ $(TOOLKIT_NAME)_OBJS := $(call sp_toolkit_object_list, $($(TOOLKIT_NAME)_OUTPUT_
 
 $(TOOLKIT_NAME)_INPUT_CFLAGS := $(call sp_toolkit_include_flags,$($(TOOLKIT_NAME)_GCH),$($(TOOLKIT_NAME)_INCLUDES))
 
-$(TOOLKIT_NAME)_CXXFLAGS := $(GLOBAL_CXXFLAGS) $($(TOOLKIT_NAME)_FLAGS) $($(TOOLKIT_NAME)_INPUT_CFLAGS)
-$(TOOLKIT_NAME)_CFLAGS := $(GLOBAL_CFLAGS) $($(TOOLKIT_NAME)_FLAGS) $($(TOOLKIT_NAME)_INPUT_CFLAGS)
+$(TOOLKIT_NAME)_CXXFLAGS := $(GLOBAL_CXXFLAGS) $($(TOOLKIT_NAME)_FLAGS) $($(TOOLKIT_NAME)_INPUT_CFLAGS) -DTOOLKIT_$(TOOLKIT_NAME)
+$(TOOLKIT_NAME)_CFLAGS := $(GLOBAL_CFLAGS) $($(TOOLKIT_NAME)_FLAGS) $($(TOOLKIT_NAME)_INPUT_CFLAGS) -DTOOLKIT_$(TOOLKIT_NAME)
+
+$(TOOLKIT_NAME)_MODULES := $($(TOOLKIT_NAME)_OUTPUT_DIR)/modules.info
 
 COUNTER_WORDS := $(words $($(TOOLKIT_NAME)_GCH) $($(TOOLKIT_NAME)_OBJS))
 COUNTER_NAME := $(TOOLKIT_TITLE)
 
 include $(GLOBAL_ROOT)/make/utils/counter.mk
 $(foreach obj,$($(TOOLKIT_NAME)_GCH) $($(TOOLKIT_NAME)_OBJS),$(eval $(call counter_template,$(obj))))
+
+$(shell \
+	$(GLOBAL_MKDIR) $($(TOOLKIT_NAME)_OUTPUT_DIR); \
+	echo 'modules: $(LOCAL_MODULES)' > $($(TOOLKIT_NAME)_MODULES).tmp; \
+	if cmp -s "$($(TOOLKIT_NAME)_MODULES).tmp" "$($(TOOLKIT_NAME)_MODULES)" ; then \
+		$(GLOBAL_RM) $($(TOOLKIT_NAME)_MODULES).tmp; \
+	else \
+		$(GLOBAL_RM) $($(TOOLKIT_NAME)_MODULES); \
+		mv $($(TOOLKIT_NAME)_MODULES).tmp $($(TOOLKIT_NAME)_MODULES); \
+		touch $($(TOOLKIT_NAME)_MODULES); \
+	fi \
+)
 
 # include dependencies
 -include $(patsubst %.o,%.o.d,$($(TOOLKIT_NAME)_OBJS))
@@ -46,30 +60,30 @@ $(foreach obj,$($(TOOLKIT_NAME)_GCH) $($(TOOLKIT_NAME)_OBJS),$(eval $(call count
 # $(1) is a parameter to substitute. The $$ will expand as $.
 
 define $(TOOLKIT_NAME)_include_rule
-$(1): $(subst $(2)/,/,$(1))
+$(1): $(subst $(2)/,/,$(1)) $$(LOCAL_MAKEFILE) $$($$(TOOLKIT_NAME)_MODULES)
 	$$(call sp_copy_header,$(1),$(2))
 endef
 
 define $(TOOLKIT_NAME)_gch_rule
-$(1): $(patsubst %.h.gch,%.h,$(1)) $(call sp_make_dep,$(1))
+$(1): $(patsubst %.h.gch,%.h,$(1)) $(call sp_make_dep,$(1)) $$(LOCAL_MAKEFILE) $$($$(TOOLKIT_NAME)_MODULES)
 	$$(call sp_compile_gch,$(2))
 endef
 
 define $(TOOLKIT_NAME)_c_rule
 $(abspath $(addprefix $(2),$(patsubst %.c,%.o,$(1)))): $(1) $$($$(TOOLKIT_NAME)_H_GCH) $$($$(TOOLKIT_NAME)_GCH) \
-		$(call sp_make_dep,$(abspath $(addprefix $(2),$(patsubst %.c,%.o,$(1)))))
+		$(call sp_make_dep,$(abspath $(addprefix $(2),$(patsubst %.c,%.o,$(1))))) $$(LOCAL_MAKEFILE) $$($$(TOOLKIT_NAME)_MODULES)
 	$$(call sp_compile_c,$(3))
 endef
 
 define $(TOOLKIT_NAME)_cpp_rule
 $(abspath $(addprefix $(2),$(patsubst %.cpp,%.o,$(1)))): $(1) $$($$(TOOLKIT_NAME)_H_GCH) $$($$(TOOLKIT_NAME)_GCH) \
-		$(call sp_make_dep,$(abspath $(addprefix $(2),$(patsubst %.cpp,%.o,$(1)))))
+		$(call sp_make_dep,$(abspath $(addprefix $(2),$(patsubst %.cpp,%.o,$(1))))) $$(LOCAL_MAKEFILE) $$($$(TOOLKIT_NAME)_MODULES)
 	$$(call sp_compile_cpp,$(3))
 endef
 
 define $(TOOLKIT_NAME)_mm_rule
 $(abspath $(addprefix $(2),$(patsubst %.mm,%.o,$(1)))): $(1) $$($$(TOOLKIT_NAME)_H_GCH) $$($$(TOOLKIT_NAME)_GCH) \
-		$(call sp_make_dep,$(abspath $(addprefix $(2),$(patsubst %.mm,%.o,$(1)))))
+		$(call sp_make_dep,$(abspath $(addprefix $(2),$(patsubst %.mm,%.o,$(1))))) $$(LOCAL_MAKEFILE) $$($$(TOOLKIT_NAME)_MODULES)
 	$$(call sp_compile_mm,$(3))
 endef
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2022 Roman Katuntsev <sbkarr@stappler.org>
+# Copyright (c) 2022 Roman Katuntsev <sbkarr@stappler.org>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,20 +21,28 @@
 COMMON_OUTPUT_DIR = $(abspath $(TOOLKIT_OUTPUT)/common)
 COMMON_OUTPUT_STATIC = $(abspath $(TOOLKIT_OUTPUT)/libcommon.a)
 
-COMMON_FLAGS := -DNOCC
+COMMON_FLAGS :=
+COMMON_LIBS :=
 
 COMMON_PRECOMPILED_HEADERS += \
 	common/core/SPCommon.h
 
-COMMON_SRCS_DIRS += common
-COMMON_SRCS_OBJS += 
-COMMON_INCLUDES_DIRS += common
-COMMON_INCLUDES_OBJS += $(OSTYPE_INCLUDE)
+COMMON_SRCS_DIRS := common
+COMMON_SRCS_OBJS := 
+COMMON_INCLUDES_DIRS := common
+COMMON_INCLUDES_OBJS := $(OSTYPE_INCLUDE)
 
 TOOLKIT_NAME := COMMON
 TOOLKIT_TITLE := common
 
-include $(GLOBAL_ROOT)/make/utils/toolkit.mk
+ifdef LOCAL_MODULES
+include $(GLOBAL_ROOT)/modules/data/data.mk
+include $(GLOBAL_ROOT)/modules/filesystem/filesystem.mk
+
+include $(GLOBAL_ROOT)/make/utils/resolve_modules.mk
+endif
+
+include $(GLOBAL_ROOT)/make/utils/make_toolkit.mk
 
 $(COMMON_OUTPUT_STATIC) : $(COMMON_H_GCH) $(COMMON_GCH) $(COMMON_OBJS)
 	$(GLOBAL_QUIET_LINK) $(GLOBAL_AR) $(COMMON_OUTPUT_STATIC) $(COMMON_OBJS)
