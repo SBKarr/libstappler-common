@@ -349,17 +349,17 @@ inline auto toStringConcat(const Container &c, const Sep &s) -> StringType {
 
 namespace stappler::string {
 
-template <typename StringType, typename Interface>
+template <typename Interface, typename StringType>
 inline StringType &trim(StringType & str) {
 	return StringTraits<Interface>::trim(str);
 }
 
-template <typename StringType, typename Interface>
+template <typename Interface, typename StringType>
 inline StringType &tolower(StringType & str) {
 	return StringTraits<Interface>::tolower(str);
 }
 
-template <typename StringType, typename Interface>
+template <typename Interface, typename StringType>
 inline StringType &toupper(StringType & str) {
 	return StringTraits<Interface>::toupper(str);
 }

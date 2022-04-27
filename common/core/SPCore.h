@@ -98,6 +98,20 @@ THE SOFTWARE.
 #include <dirent.h>
 #include <utime.h>
 
+
+#if __CDT_PARSER__
+// IDE-specific definition
+
+// enable all modules
+
+#define MODULE_COMMON_DATA 1
+#define MODULE_COMMON_FILESYSTEM 1
+#define MODULE_COMMON_BROTLI_LIB 1
+#define MODULE_COMMON_THREADS 1
+#define MODULE_COMMON_IDN 1
+
+#endif
+
 #if (LINUX)
 #include <pwd.h>
 #endif

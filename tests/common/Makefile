@@ -31,7 +31,9 @@ LOCAL_TOOLKIT := $(abspath $(STAPPLER_ROOT)/common.mk)
 LOCAL_MODULES := \
 	common_brotli_lib \
 	common_data \
-	common_filesystem
+	common_filesystem \
+	common_idn \
+	common_bitmap
 
 LOCAL_ROOT = .
 
@@ -44,7 +46,3 @@ LOCAL_INCLUDES_OBJS :=
 LOCAL_MAIN := main.cpp
 
 include $(STAPPLER_ROOT)/make/universal.mk
-
-all: host-debug
-
-.PHONY: all

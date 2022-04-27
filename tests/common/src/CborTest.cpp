@@ -20,9 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 **/
 
+#include "SPCommon.h"
+
 #ifdef MODULE_COMMON_DATA
 
-#include "SPCommon.h"
 #include "SPTime.h"
 #include "SPString.h"
 #include "SPData.h"

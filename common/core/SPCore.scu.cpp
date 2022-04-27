@@ -40,6 +40,7 @@ THE SOFTWARE.
 #include "SPSha2.cc"
 #include "SPString.cc"
 #include "SPUnicode.cc"
+#include "SPHtmlParser.cc"
 
 #include "SPMemUserData.cc"
 #include "SPTime.cc"
@@ -48,12 +49,12 @@ THE SOFTWARE.
 
 #ifdef MODULE_COMMON_DATA
 #include "SPData.cc"
+#include "SPDataUrlencoded.cc"
 #endif
 
-#ifdef MODULE_COMMON_FILESYSTEM
-#include "SPFilepath.cc"
-#include "SPFilesystem.cc"
-#include "platform/SPFilesystem-linux.cc"
-#include "SPFilesystemNativeMingw.cc"
-#include "SPFilesystemNativePosix.cc"
+#include "SPUrl.cc"
+#include "SPValid.cc"
+
+#ifdef MODULE_COMMON_IDN
+#include "SPIdn.cc"
 #endif

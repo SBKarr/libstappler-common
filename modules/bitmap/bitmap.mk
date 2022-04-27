@@ -18,29 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-define emplace_module =
-LOCAL_MODULES += $(1)
-$(eval $(call follow_deps_module,$(1)))
-endef
+MODULE_COMMON_BITMAP_LIBS := -lz -lpthread -l:libpng16.a -l:libgif.a -l:libjpeg.a -l:libwebp.a
+MODULE_COMMON_BITMAP_SRCS_DIRS := $(COMMON_MODULE_DIR)/bitmap
+MODULE_COMMON_BITMAP_SRCS_OBJS := 
+MODULE_COMMON_BITMAP_INCLUDES_DIRS :=
+MODULE_COMMON_BITMAP_INCLUDES_OBJS := $(COMMON_MODULE_DIR)/bitmap 
+MODULE_COMMON_BITMAP_DEPENDS_ON := common_filesystem
 
-define follow_deps_module =
-$(foreach dep,$($(1)_DEPENDS_ON),\
-	$(if $(filter $(dep),$(LOCAL_MODULES)),,$(eval $(call emplace_module,$(dep)))) \
-)
-endef
-
-define merge_module =
-$(TOOLKIT_NAME)_FLAGS += $($(1)_FLAGS) -D$(1)
-$(TOOLKIT_NAME)_LIBS += $($(1)_LIBS)
-$(TOOLKIT_NAME)_SRCS_DIRS += $($(1)_SRCS_DIRS)
-$(TOOLKIT_NAME)_SRCS_OBJS += $($(1)_SRCS_OBJS)
-$(TOOLKIT_NAME)_INCLUDES_DIRS += $($(1)_INCLUDES_DIRS)
-$(TOOLKIT_NAME)_INCLUDES_OBJS += $($(1)_INCLUDES_OBJS)
-endef
-
-$(foreach module,$(LOCAL_MODULES),$(foreach module_name,$(MODULE_$(module)),\
-	$(eval $(call follow_deps_module,$(module_name)))))
-
-$(foreach module,$(LOCAL_MODULES),$(foreach module_name,$(MODULE_$(module)),\
-	$(eval $(call merge_module,$(module_name)))))
-	
+# module name resolution
+MODULE_common_bitmap := MODULE_COMMON_BITMAP

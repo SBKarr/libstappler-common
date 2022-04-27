@@ -45,6 +45,7 @@ namespace stappler::mempool::custom {
 
 using Status = int;
 
+// minimal size of block, that can be reallocated
 static constexpr uint32_t BlockThreshold = 256;
 
 // Align on a power of 2 boundary

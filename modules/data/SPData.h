@@ -52,6 +52,25 @@ template <typename Interface>
 auto parseCommandLineOptions(int argc, const char * argv[],
 		const Callback<int (ValueTemplate<Interface> &ret, char c, const char *str)> &switchCallback,
 		const Callback<int (ValueTemplate<Interface> &ret, const StringView &str, int argc, const char * argv[])> &stringCallback)
+-> ValueTemplate<Interface>;
+
+template <typename Interface>
+auto parseCommandLineOptions(int argc, const char16_t * wargv[],
+		const Callback<int (ValueTemplate<Interface> &ret, char c, const char *str)> &switchCallback,
+		const Callback<int (ValueTemplate<Interface> &ret, const StringView &str, int argc, const char * argv[])> &stringCallback)
+-> ValueTemplate<Interface>;
+
+
+// decode x-www-urlencoded into data
+template <typename Interface>
+auto readUrlencoded(StringView, size_t maxLength = maxOf<size_t>(),
+		size_t maxVarSize = maxOf<size_t>()) -> data::ValueTemplate<Interface>;
+
+
+template <typename Interface>
+auto parseCommandLineOptions(int argc, const char * argv[],
+		const Callback<int (ValueTemplate<Interface> &ret, char c, const char *str)> &switchCallback,
+		const Callback<int (ValueTemplate<Interface> &ret, const StringView &str, int argc, const char * argv[])> &stringCallback)
 -> ValueTemplate<Interface> {
 	if (argc == 0) {
 		return ValueTemplate<Interface>();

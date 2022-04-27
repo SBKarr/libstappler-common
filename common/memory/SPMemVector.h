@@ -158,6 +158,7 @@ public:
 	size_type size() const noexcept { return _mem.size(); }
 	size_type capacity() const noexcept { return _mem.capacity(); }
 	bool empty() const noexcept { return _mem.empty(); }
+	void reserve_block_optimal() { _mem.reserve_block_optimal(); }
 	void reserve( size_type new_cap ) { _mem.reserve(new_cap); }
 	void shrink_to_fit() { }
 

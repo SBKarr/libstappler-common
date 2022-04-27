@@ -204,7 +204,11 @@ public:
 
 	void grow_alloc(allocator &a, size_type newsize) {
 		size_t alloc_size = newsize + Extra;
-		auto ptr = a.__allocate(alloc_size);
+
+		// use extra memory if provided by allocator
+		size_t allocated = 0; // real memory block size returned
+		auto ptr = a.__allocate(alloc_size, allocated);
+		alloc_size = allocated / sizeof(Type);
 
 		if (_used > 0 && _ptr) {
 			a.move(ptr, _ptr, _used);
@@ -281,6 +285,15 @@ public:
 	using base::data;
 	using base::size;
 	using base::capacity;
+
+	// reserve memory block, optimal for realloc/free
+	// useful for small temporary buffers
+	// this memory block can be reused by next temporary buffer of same size
+	// so, no pool memory will be leaked
+	pointer reserve_block_optimal() {
+		auto target = mempool::custom::BlockThreshold / sizeof(Type) + 1;
+		return reserve(target);
+	}
 
 	pointer reserve(size_type s, bool grow = false) {
 		if (s > 0 && s > _allocated) {

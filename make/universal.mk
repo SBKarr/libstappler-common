@@ -30,7 +30,7 @@ host-install:
 	@$(MAKE) STAPPLER_TARGET=host install
 
 host-debug:
-	@$(MAKE) STAPPLER_TARGET=host
+	@$(MAKE) STAPPLER_TARGET=host all
 
 host-debug-clean:
 	@$(MAKE) STAPPLER_TARGET=host clean

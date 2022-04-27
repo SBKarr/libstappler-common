@@ -35,14 +35,13 @@ COMMON_INCLUDES_OBJS := $(OSTYPE_INCLUDE)
 TOOLKIT_NAME := COMMON
 TOOLKIT_TITLE := common
 
-ifdef LOCAL_MODULES
-include $(GLOBAL_ROOT)/modules/data/data.mk
-include $(GLOBAL_ROOT)/modules/filesystem/filesystem.mk
+include $(GLOBAL_ROOT)/common-modules.mk
 
-include $(GLOBAL_ROOT)/make/utils/resolve_modules.mk
+ifdef LOCAL_MODULES
+include $(GLOBAL_ROOT)/make/utils/resolve-modules.mk
 endif
 
-include $(GLOBAL_ROOT)/make/utils/make_toolkit.mk
+include $(GLOBAL_ROOT)/make/utils/make-toolkit.mk
 
 $(COMMON_OUTPUT_STATIC) : $(COMMON_H_GCH) $(COMMON_GCH) $(COMMON_OBJS)
 	$(GLOBAL_QUIET_LINK) $(GLOBAL_AR) $(COMMON_OUTPUT_STATIC) $(COMMON_OBJS)
