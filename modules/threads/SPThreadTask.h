@@ -20,8 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 **/
 
-#ifndef COMPONENTS_COMMON_UTILS_THREADS_SPTHREADTASK_H_
-#define COMPONENTS_COMMON_UTILS_THREADS_SPTHREADTASK_H_
+#ifndef MODULES_THREADS_SPTHREADTASK_H_
+#define MODULES_THREADS_SPTHREADTASK_H_
 
 #include "SPRef.h"
 #include "SPMemPriorityQueue.h"
@@ -30,6 +30,8 @@ namespace stappler::thread {
 
 class Task : public RefBase<memory::StandartInterface> {
 public: /* typedefs */
+	using Ref = RefBase<memory::StandartInterface>;
+
 	/* Function to be executed in init phase */
 	using PrepareCallback = std::function<bool(const Task &)>;
 
@@ -119,4 +121,4 @@ protected:
 
 }
 
-#endif /* COMPONENTS_COMMON_UTILS_THREADS_SPTHREADTASK_H_ */
+#endif /* MODULES_THREADS_SPTHREADTASK_H_ */

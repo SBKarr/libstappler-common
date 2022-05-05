@@ -228,15 +228,8 @@ static bool _validateEmailData(StringView r, typename Interface::StringType *tar
 			}
 		}
 	} else {
-		auto tmp = r;
-		while (!tmp.empty()) {
-			auto t = tmp.readUntil<StringView::Chars<'.'>>();
-			if (tmp.is('.')) {
-				if (t.empty()) {
-					return false;
-				}
-				++ tmp;
-			}
+		if (!validateHost(r)) {
+			return false;
 		}
 
 		auto host = idn::toAscii<Interface>(r, false);
@@ -245,6 +238,17 @@ static bool _validateEmailData(StringView r, typename Interface::StringType *tar
 		}
 
 		if (target) { target->append(host); }
+
+		/*while (!tmp.empty()) {
+			auto t = tmp.readUntil<StringView::Chars<'.'>>();
+			if (tmp.is('.')) {
+				if (t.empty()) {
+					return false;
+				}
+				++ tmp;
+			}
+		}*/
+
 	}
 
 	return true;
@@ -252,7 +256,7 @@ static bool _validateEmailData(StringView r, typename Interface::StringType *tar
 
 template <typename Interface>
 static bool _validateEmail(typename Interface::StringType &str) {
-	string::trim<Interface>(str);
+	string::StringTraits<Interface>::trim(str);
 	if (str.empty()) {
 		return false;
 	}

@@ -20,8 +20,14 @@
  THE SOFTWARE.
  **/
 
-#include "SPCommon.h"
+#include "SPJsonWebToken.h"
 
-#include "SPThreads-linux.cc"
-#include "SPThreadTask.cc"
-#include "SPThreadTaskQueue.cc"
+SPJsonWebToken::SPJsonWebToken() {
+	// TODO Auto-generated constructor stub
+
+}
+
+SPJsonWebToken::~SPJsonWebToken() {
+	// TODO Auto-generated destructor stub
+}
+

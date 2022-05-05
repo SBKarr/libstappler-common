@@ -178,6 +178,17 @@ struct ToStringTraits<memory::StandartInterface> {
 	using WideString = typename memory::StandartInterface::WideStringType;
 	using StringStream = typename memory::StandartInterface::StringStreamType;
 
+	template <typename T>
+	static void toStringStream(StringStream &stream, T value) {
+		stream << value;
+	}
+
+	template <typename T, typename... Args>
+	static void toStringStream(StringStream &stream, T value, Args && ... args) {
+		stream << value;
+		toStringStream(stream, std::forward<Args>(args)...);
+	}
+
 	template <class T>
 	static String toString(T value) {
 		return std::to_string(value);
@@ -185,6 +196,14 @@ struct ToStringTraits<memory::StandartInterface> {
 
 	static String toString(const String &value) { return value; }
 	static String toString(const char *value) { return value; }
+
+	template <typename T, typename... Args>
+	static String toString(T t, Args && ... args) {
+		StringStream stream;
+		toStringStream(stream, t);
+		toStringStream(stream, std::forward<Args>(args)...);
+	    return stream.str();
+	}
 };
 
 template <>
@@ -349,17 +368,17 @@ inline auto toStringConcat(const Container &c, const Sep &s) -> StringType {
 
 namespace stappler::string {
 
-template <typename Interface, typename StringType>
+template <typename StringType, typename Interface>
 inline StringType &trim(StringType & str) {
 	return StringTraits<Interface>::trim(str);
 }
 
-template <typename Interface, typename StringType>
+template <typename StringType, typename Interface>
 inline StringType &tolower(StringType & str) {
 	return StringTraits<Interface>::tolower(str);
 }
 
-template <typename Interface, typename StringType>
+template <typename StringType, typename Interface>
 inline StringType &toupper(StringType & str) {
 	return StringTraits<Interface>::toupper(str);
 }

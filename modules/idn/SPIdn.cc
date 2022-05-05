@@ -26,7 +26,7 @@
 #include "Windows.h"
 #include "winnls.h"
 #else
-#include "idn2.h"
+#include "unicode/uidna.h"
 #endif
 
 namespace stappler::idn {
@@ -59,13 +59,21 @@ auto _idnToAscii(StringView source, bool validate) -> typename Interface::String
 		return string::toUtf8<Interface>((char16_t *)punycode);
 	}
 #else
-	char *out = nullptr;
+	char buf[1_KiB] = { 0 };
+	UErrorCode code = U_ZERO_ERROR;
+	auto retLen = u_nameToASCII_UTF8(UIDNA_NONTRANSITIONAL_TO_ASCII, source.data(), source.size(), buf, 1_KiB, nullptr, &code);
+	if (retLen > 0 && code == U_ZERO_ERROR) {
+		typename Interface::StringType ret(buf, retLen);
+		return ret;
+	}
+
+	/*char *out = nullptr;
 	auto err = idn2_to_ascii_8z(source.data(), &out, IDN2_NFC_INPUT|IDN2_NONTRANSITIONAL);
 	if (err == IDN2_OK) {
 		typename Interface::StringType ret(out);
 		free(out);
 		return ret;
-	}
+	}*/
 #endif
 	return typename Interface::StringType();
 }
@@ -92,13 +100,21 @@ auto _idnToUnicode(StringView source, bool validate) -> typename Interface::Stri
 		return string::toUtf8<Interface>((char16_t *)unicode);
 	}
 #else
-	char *out = nullptr;
+	char buf[1_KiB] = { 0 };
+	UErrorCode code = U_ZERO_ERROR;
+	auto retLen = u_nameToUnicodeUTF8(0, source.data(), source.size(), buf, 1_KiB, nullptr, &code);
+	if (retLen > 0 && code == U_ZERO_ERROR) {
+		typename Interface::StringType ret(buf, retLen);
+		return ret;
+	}
+
+	/*char *out = nullptr;
 	auto err = idn2_to_unicode_8z8z(source.data(), &out, 0);
 	if (err == IDN2_OK) {
 		typename Interface::StringType ret(out);
 		free(out);
 		return ret;
-	}
+	}*/
 #endif
 	return typename Interface::StringType();
 }

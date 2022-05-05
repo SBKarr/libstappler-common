@@ -27,11 +27,24 @@
 #include "SPIO.h"
 #include "SPSha.h"
 
+#if __CDT_PARSER__
+typedef struct evp_pkey_st *sp_pubkey_t;
+typedef struct evp_pkey_st *sp_privkey_t;
+#endif
+
+#if SP_CRYPTO_GNUTLS
 struct gnutls_pubkey_st;
-typedef struct gnutls_pubkey_st *gnutls_pubkey_t;
+typedef struct gnutls_pubkey_st *sp_pubkey_t;
 
 struct gnutls_privkey_st;
-typedef struct gnutls_privkey_st *gnutls_privkey_t;
+typedef struct gnutls_privkey_st *sp_privkey_t;
+
+#elif SP_CRYPTO_OPENSSL
+
+typedef struct evp_pkey_st *sp_pubkey_t;
+typedef struct evp_pkey_st *sp_privkey_t;
+
+#endif
 
 namespace stappler::crypto {
 
@@ -50,7 +63,16 @@ enum class KeyBits {
 	_4096
 };
 
-using AesKey = std::array<uint8_t, 32>;
+enum class KeyFormat {
+	PKCS1,
+	PKCS8,
+	RSA = PKCS1,
+};
+
+struct AesKey {
+	std::array<uint8_t, 32> data;
+	uint32_t version; // keygen version
+};
 
 class PrivateKey {
 public:
@@ -58,28 +80,29 @@ public:
 	PrivateKey(BytesView, const CoderSource & passwd = CoderSource());
 	~PrivateKey();
 
+	PrivateKey(const PrivateKey &) = delete;
+	PrivateKey& operator=(const PrivateKey &) = delete;
+
 	bool generate(KeyBits = KeyBits::_2048);
+
 	bool import(BytesView, const CoderSource & passwd = CoderSource());
 
 	PublicKey exportPublic() const;
 
-	gnutls_privkey_t getKey() const { return _key; }
+	sp_privkey_t getKey() const { return _key; }
 
-	operator bool () const { return _valid; }
+	operator bool () const { return _valid && _loaded; }
 
-	template <typename Interface>
-	auto exportPem() -> typename Interface::BytesType;
+	bool exportPem(const Callback<void(const uint8_t *, size_t)> &, KeyFormat = KeyFormat::PKCS8, CoderSource passPhrase = StringView()) const;
+	bool exportDer(const Callback<void(const uint8_t *, size_t)> &, KeyFormat = KeyFormat::PKCS8, CoderSource passPhrase = StringView()) const;
 
-	template <typename Interface>
-	auto exportDer() -> typename Interface::BytesType;
-
-	template <typename Interface>
-	auto sign(BytesView, SignAlgorithm = SignAlgorithm::RSA_SHA512) -> typename Interface::BytesType;
+	bool sign(const Callback<void(const uint8_t *, size_t)> &, CoderSource, SignAlgorithm = SignAlgorithm::RSA_SHA512) const;
+	bool verify(CoderSource data, BytesView signature, SignAlgorithm) const;
 
 protected:
 	bool _loaded = false;
 	bool _valid = false;
-	gnutls_privkey_t _key;
+	sp_privkey_t _key;
 };
 
 class PublicKey {
@@ -89,79 +112,35 @@ public:
 	PublicKey(const PrivateKey &);
 	~PublicKey();
 
+	PublicKey(const PublicKey &) = delete;
+	PublicKey& operator=(const PublicKey &) = delete;
+
 	bool import(BytesView);
-	bool import(BytesView, BytesView);
+	bool importOpenSSH(StringView);
 
-	gnutls_pubkey_t getKey() const { return _key; }
+	sp_pubkey_t getKey() const { return _key; }
 
-	operator bool () const { return _valid; }
+	operator bool () const { return _valid && _loaded; }
 
-	template <typename Interface>
-	auto exportPem() -> typename Interface::BytesType;
+	bool exportPem(const Callback<void(const uint8_t *, size_t)> &) const; // only pkcs8
+	bool exportDer(const Callback<void(const uint8_t *, size_t)> &) const; // only pkcs8
 
-	template <typename Interface>
-	auto exportDer() -> typename Interface::BytesType;
-
-	bool verify(BytesView data, BytesView signature, SignAlgorithm);
+	bool verify(CoderSource data, BytesView signature, SignAlgorithm) const;
 
 protected:
 	bool _loaded = false;
 	bool _valid = false;
-	gnutls_pubkey_t _key;
+	sp_pubkey_t _key;
 };
 
-// convert public openssh key into DER format
-template <typename Interface>
-auto convertOpenSSHKey(const StringView &) -> typename Interface::BytesType;
+bool encryptAes(const AesKey &, BytesView, const Callback<void(const uint8_t *, size_t)> &);
+bool decryptAes(const AesKey &, BytesView, const Callback<void(const uint8_t *, size_t)> &);
 
-template <typename Interface>
-auto encryptAes(const AesKey &, BytesView, uint32_t version) -> typename Interface::BytesType;
+AesKey makeAesKey(BytesView pkey, BytesView hash, uint32_t version = 1);
+AesKey makeAesKey(const PrivateKey &pkey, BytesView hash, uint32_t version = 1);
 
-template <typename Interface>
-auto decryptAes(const AesKey &, BytesView) -> typename Interface::BytesType;
-
-AesKey makeAesKey(BytesView pkey, BytesView hash, uint32_t version);
+// get keygen version from encrypted block
 uint32_t getAesVersion(BytesView);
-
-template <typename Interface>
-auto sign(gnutls_privkey_t, BytesView, SignAlgorithm) -> typename Interface::BytesType;
-
-template <typename Interface>
-auto exportPem(gnutls_pubkey_t) -> typename Interface::BytesType;
-
-template <typename Interface>
-auto exportDer(gnutls_pubkey_t) -> typename Interface::BytesType;
-
-template <typename Interface>
-auto exportPem(gnutls_privkey_t) -> typename Interface::BytesType;
-
-template <typename Interface>
-auto exportDer(gnutls_privkey_t) -> typename Interface::BytesType;
-
-template <typename Interface>
-auto PrivateKey::exportPem() -> typename Interface::BytesType {
-	return crypto::exportPem<Interface>(_key);
-}
-
-template <typename Interface>
-auto PrivateKey::exportDer() -> typename Interface::BytesType {
-	return crypto::exportDer<Interface>(_key);
-}
-
-template <typename Interface>
-auto PrivateKey::sign(BytesView data, SignAlgorithm algo) -> typename Interface::BytesType {
-	return crypto::sign<Interface>(_key, data, algo);
-}
-
-template <typename Interface>
-auto PublicKey::exportPem() -> typename Interface::BytesType {
-	return crypto::exportPem<Interface>(_key);
-}
-
-template <typename Interface>
-auto PublicKey::exportDer() -> typename Interface::BytesType {
-	return crypto::exportDer<Interface>(_key);
-}
 
 }
 

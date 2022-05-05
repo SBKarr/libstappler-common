@@ -1,15 +1,15 @@
 # Copyright (c) 2022 Roman Katuntsev <sbkarr@stappler.org>
-#
+# 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-#
+# 
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-#
+# 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,33 +18,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-STAPPLER_ROOT ?= ../..
+MODULE_COMMON_CRYPTO_GNUTLS_LIBS := -l:libgnutls.a -l:libhogweed.a -l:libnettle.a -l:libgmp.a -l:libunistring.a -l:libcrypto.a -l:libssl.a
+MODULE_COMMON_CRYPTO_GNUTLS_FLAGS := -DSP_CRYPTO_GNUTLS
+MODULE_COMMON_CRYPTO_GNUTLS_SRCS_DIRS := $(COMMON_MODULE_DIR)/crypto
+MODULE_COMMON_CRYPTO_GNUTLS_SRCS_OBJS := 
+MODULE_COMMON_CRYPTO_GNUTLS_INCLUDES_DIRS :=
+MODULE_COMMON_CRYPTO_GNUTLS_INCLUDES_OBJS := $(COMMON_MODULE_DIR)/crypto
+MODULE_COMMON_CRYPTO_GNUTLS_DEPENDS_ON := common_idn
 
-# force to rebuild if this makefile changed
-LOCAL_MAKEFILE := $(lastword $(MAKEFILE_LIST))
+# module name resolution
+MODULE_common_crypto_gnutls := MODULE_COMMON_CRYPTO_GNUTLS
 
-LOCAL_OUTDIR := stappler-build
-LOCAL_EXECUTABLE := testapp
+MODULE_COMMON_CRYPTO_LIBS := -l:libcrypto.a -l:libssl.a
+MODULE_COMMON_CRYPTO_FLAGS := -DSP_CRYPTO_OPENSSL
+MODULE_COMMON_CRYPTO_SRCS_DIRS := $(COMMON_MODULE_DIR)/crypto
+MODULE_COMMON_CRYPTO_SRCS_OBJS := 
+MODULE_COMMON_CRYPTO_INCLUDES_DIRS :=
+MODULE_COMMON_CRYPTO_INCLUDES_OBJS := $(COMMON_MODULE_DIR)/crypto
+MODULE_COMMON_CRYPTO_DEPENDS_ON :=
 
-LOCAL_TOOLKIT := $(abspath $(STAPPLER_ROOT)/common.mk)
-
-LOCAL_MODULES := \
-	common_brotli_lib \
-	common_data \
-	common_filesystem \
-	common_crypto \
-	common_bitmap \
-	common_threads \
-	common_network
-
-LOCAL_ROOT = .
-
-LOCAL_SRCS_DIRS :=  src
-LOCAL_SRCS_OBJS :=
-
-LOCAL_INCLUDES_DIRS := src
-LOCAL_INCLUDES_OBJS :=
-
-LOCAL_MAIN := main.cpp
-
-include $(STAPPLER_ROOT)/make/universal.mk
+# module name resolution
+MODULE_common_crypto := MODULE_COMMON_CRYPTO

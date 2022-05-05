@@ -62,7 +62,7 @@ public:
 	function(const function & other, const allocator_type &alloc = allocator_type()) noexcept : mAllocator(alloc) {
 		mCallback = other.mCallback;
 		if (mCallback) {
-			mCallback().copy(other.mBuffer, mAllocator, mBuffer);
+			mCallback()->copy(other.mBuffer, mAllocator, mBuffer);
 		}
 	}
 
@@ -70,7 +70,7 @@ public:
 		clear();
 		mCallback = other.mCallback;
 		if (mCallback) {
-			mCallback().copy(other.mBuffer, mAllocator, mBuffer);
+			mCallback()->copy(other.mBuffer, mAllocator, mBuffer);
 		}
 		return *this;
 	}
@@ -79,9 +79,9 @@ public:
 		mCallback = other.mCallback;
 		if (mCallback) {
 			if (other.mAllocator == mAllocator) {
-				mCallback().move(other.mBuffer, mAllocator, mBuffer);
+				mCallback()->move(other.mBuffer, mAllocator, mBuffer);
 			} else {
-				mCallback().copy(other.mBuffer, mAllocator, mBuffer);
+				mCallback()->copy(other.mBuffer, mAllocator, mBuffer);
 			}
 		}
 	}
@@ -91,9 +91,9 @@ public:
 		mCallback = other.mCallback;
 		if (mCallback) {
 			if (other.mAllocator == mAllocator) {
-				mCallback().move(other.mBuffer, mAllocator, mBuffer);
+				mCallback()->move(other.mBuffer, mAllocator, mBuffer);
 			} else {
-				mCallback().copy(other.mBuffer, mAllocator, mBuffer);
+				mCallback()->copy(other.mBuffer, mAllocator, mBuffer);
 			}
 		}
 		return *this;
@@ -117,7 +117,7 @@ public:
 	}
 
 	ReturnType operator () (ArgumentTypes ... args) const {
-		return mCallback().invoke(mBuffer, std::forward<ArgumentTypes>(args) ...);
+		return mCallback()->invoke(mBuffer, std::forward<ArgumentTypes>(args) ...);
 	}
 
 	inline operator bool () const noexcept { return mCallback != nullptr; }
@@ -142,14 +142,14 @@ private:
 		move_pointer move;
 	};
 
-	using traits_callback = functor_traits (*) ();
+	using traits_callback = functor_traits * (*) ();
 
 	template <typename FunctionT>
-	static functor_traits makeFunctionTraits() noexcept {
+	static functor_traits *makeFunctionTraits() noexcept {
 		using BaseType = typename std::remove_cv<typename std::remove_reference<FunctionT>::type>::type;
 		using BaseTypePtr = BaseType *;
 		if constexpr(sizeof(BaseType) <= OptBufferSize) {
-			return functor_traits{
+			static functor_traits traits{
 				[] (const void* arg, ArgumentTypes ... args) -> ReturnType {
 					return (*static_cast<const BaseType *>(arg))(std::forward<ArgumentTypes>(args) ...);
 				},
@@ -163,8 +163,10 @@ private:
 					return new (buf) BaseType(std::move(*static_cast<BaseType *>(arg)));
 				},
 			};
+
+			return &traits;
 		} else {
-			return functor_traits{
+			static functor_traits traits{
 				[] (const void* arg, ArgumentTypes ... args) -> ReturnType {
 					return (*(*static_cast<const BaseTypePtr *>(arg)))(std::forward<ArgumentTypes>(args) ...);
 				},
@@ -187,6 +189,8 @@ private:
 					return ret;
 				},
 			};
+
+			return &traits;
 		}
 	}
 
@@ -205,13 +209,13 @@ private:
 
 			new (buf) (const BaseType *)(mem);
 		}
-		return [] () { return makeFunctionTraits<FunctionT>(); };
+		return &makeFunctionTraits<FunctionT>();
 	}
 
 	void clear() {
 		if (mCallback) {
 			auto t = mCallback();
-			t.destroy(mBuffer);
+			t->destroy(mBuffer);
 			mCallback = nullptr;
 		}
 	}

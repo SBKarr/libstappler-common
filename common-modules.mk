@@ -26,3 +26,5 @@ include $(COMMON_MODULE_DIR)/data/data.mk
 include $(COMMON_MODULE_DIR)/filesystem/filesystem.mk
 include $(COMMON_MODULE_DIR)/threads/threads.mk
 include $(COMMON_MODULE_DIR)/idn/idn.mk
+include $(COMMON_MODULE_DIR)/crypto/crypto.mk
+include $(COMMON_MODULE_DIR)/network/network.mk

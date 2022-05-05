@@ -43,6 +43,7 @@ struct ValidTest : MemPoolTest {
 
 		uint32_t failed = 0;
 
+		data::ValueTemplate<memory::PoolInterface> emails;
 		if (valid::readIpRange("123.45.67.89-98.76.54.32") == pair(makeIp(123,45,67,89), makeIp(98,76,54,32))) {
 			stream << "123.45.67.89-98.76.54.32 : [valid]\n";
 		} else {
@@ -88,8 +89,8 @@ struct ValidTest : MemPoolTest {
 		}
 
 		data::ValueTemplate<memory::PoolInterface> urls;
-		urls.addString("https://йакреведко.рф/test/.././..////?query[креведко][treas][ds][]=qwert#аяклешня");
 		urls.addString("ssh://git@atom0.stappler.org:21002/StapplerApi.git?qwr#test");
+		urls.addString("https://йакреведко.рф/test/.././..////?query[креведко][treas][ds][]=qwert#аяклешня");
 		urls.addString("localhost");
 		urls.addString("localhost:8080");
 		urls.addString("localhost/test1/test2");
@@ -108,7 +109,6 @@ struct ValidTest : MemPoolTest {
 			}
 		}
 
-		data::ValueTemplate<memory::PoolInterface> emails;
 		emails.addString("аяклешня@йакреведко.рф");
 		emails.addString("prettyandsimple@example.com");
 		emails.addString("йакреведко@упячка.рф");
@@ -143,8 +143,8 @@ struct ValidTest : MemPoolTest {
 
 		// should fail
 		emails.addString("john.doe@failed..com");
-		emails.addString("Abc.failed.com");
 		emails.addString("A@b@c@failed.com");
+		emails.addString("Abc.failed.com");
 		emails.addString("a\"b(c)d,e:f;g<h>i[j\\k]l@failed.com"); // (none of the special characters in this local part are allowed outside quotation marks)
 		emails.addString("just\"not\"right@failed.com"); // (quoted strings must be dot separated or the only element making up the local-part)
 		emails.addString("this is\"not\allowed@failed.com"); // (spaces, quotes, and backslashes may only exist when within quoted strings and preceded by a backslash)

@@ -21,7 +21,18 @@
  **/
 
 #include "SPCommon.h"
+#include "SPThreadTaskQueue.h"
 
-#include "SPThreads-linux.cc"
-#include "SPThreadTask.cc"
-#include "SPThreadTaskQueue.cc"
+#if (LINUX)
+
+namespace stappler::thread {
+
+void _workerThread(thread::ThreadHandlerInterface *tm) {
+	tm->threadInit();
+    while (tm->worker()) { }
+    tm->threadDispose();
+}
+
+}
+
+#endif

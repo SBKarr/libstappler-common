@@ -21,8 +21,8 @@
  **/
 
 
-#ifndef COMMON_UTILS_SPFILEPATH_H_
-#define COMMON_UTILS_SPFILEPATH_H_
+#ifndef MODULES_FILESYSTEM_SPFILEPATH_H_
+#define MODULES_FILESYSTEM_SPFILEPATH_H_
 
 #include "SPCommon.h"
 #include "SPStringView.h"
@@ -198,4 +198,4 @@ auto replace(StringView path, StringView source, StringView dest) -> typename In
 
 }
 
-#endif /* COMMON_UTILS_SPFILEPATH_H_ */
+#endif /* MODULES_FILESYSTEM_SPFILEPATH_H_ */

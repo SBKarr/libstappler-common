@@ -21,7 +21,6 @@ THE SOFTWARE.
 **/
 
 #include "SPThreadTaskQueue.h"
-#include "SPCommonPlatform.h"
 
 #include <chrono>
 
@@ -318,7 +317,7 @@ thread_local const TaskQueue *tl_owner = nullptr;
 
 void ThreadHandlerInterface::workerThread(ThreadHandlerInterface *tm, const TaskQueue *q) {
 	tl_owner = q;
-	platform::proc::_workerThread(tm);
+	_workerThread(tm);
 }
 
 const TaskQueue *TaskQueue::getOwner() {
@@ -358,7 +357,7 @@ void TaskQueue::finalize() {
 void TaskQueue::performAsync(Rc<Task> &&task) {
 	if (task) {
 		_SingleTaskWorker *worker = new _SingleTaskWorker(this, std::move(task));
-		StdThread wThread(ThreadHandlerInterface::workerThread, worker, this);
+		std::thread wThread(ThreadHandlerInterface::workerThread, worker, this);
 		wThread.detach();
 	}
 }
@@ -381,14 +380,14 @@ void TaskQueue::perform(Rc<Task> &&task, bool first) {
 	}
 }
 
-void TaskQueue::perform(Function<void()> &&cb, Ref *ref, bool first) {
+void TaskQueue::perform(std::function<void()> &&cb, Ref *ref, bool first) {
 	perform(Rc<Task>::create([fn = move(cb)] (const Task &) -> bool {
 		fn();
 		return true;
 	}, nullptr, ref), first);
 }
 
-bool TaskQueue::perform(Map<uint32_t, Vector<Rc<Task>>> &&tasks) {
+bool TaskQueue::perform(std::map<uint32_t, std::vector<Rc<Task>>> &&tasks) {
 	if (tasks.empty()) {
 		return false;
 	}
@@ -475,7 +474,7 @@ void TaskQueue::onMainThread(Rc<Task> &&task) {
 	}
 }
 
-void TaskQueue::onMainThread(Function<void()> &&func, Ref *target) {
+void TaskQueue::onMainThread(std::function<void()> &&func, Ref *target) {
     _outputMutex.lock();
     _outputCallbacks.emplace_back(std::move(func), target);
     ++ _outputCounter;
@@ -494,12 +493,12 @@ void TaskQueue::onMainThread(Function<void()> &&func, Ref *target) {
 	}
 }
 
-StdVector<std::thread::id> TaskQueue::getThreadIds() const {
+std::vector<std::thread::id> TaskQueue::getThreadIds() const {
 	if (!_context) {
-		return StdVector<std::thread::id>();
+		return std::vector<std::thread::id>();
 	}
 
-	StdVector<std::thread::id> ret;
+	std::vector<std::thread::id> ret;
 	for (Worker *it : _context->workers) {
 		ret.emplace_back(it->getThreadId());
 	}
@@ -625,7 +624,7 @@ Worker::Worker(TaskQueue::WorkerContext *queue, uint32_t threadId, uint32_t work
 	if ((queue->flags & TaskQueue::Flags::LocalQueue) != TaskQueue::Flags::None) {
 		_local = new LocalQueue;
 	}
-	_thread = StdThread(ThreadHandlerInterface::workerThread, this, queue->queue);
+	_thread = std::thread(ThreadHandlerInterface::workerThread, this, queue->queue);
 }
 
 Worker::~Worker() {

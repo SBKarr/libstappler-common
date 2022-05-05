@@ -21,7 +21,39 @@
  **/
 
 #include "SPCommon.h"
+#include "SPNetworkHandle.h"
+#include "Test.h"
 
-#include "SPThreads-linux.cc"
-#include "SPThreadTask.cc"
-#include "SPThreadTaskQueue.cc"
+namespace stappler::app::test {
+
+struct NetworkTest : Test {
+	NetworkTest() : Test("NetworkTest") { }
+
+
+	virtual bool run() override {
+		StringStream stream;
+		size_t count = 0;
+		size_t passed = 0;
+		stream << "\n";
+
+		runTest(stream, "get", count, passed, [&] {
+			network::Handle<Interface> h;
+			h.init(network::Method::Get, "https://geobase.stappler.org/proxy/getHeaders?pretty");
+
+			h.setReceiveCallback([&] (char *data, size_t size) -> size_t {
+				std::cout << StringView(data, size);
+				return size;
+			});
+
+			auto ret = h.perform();
+			std::cout << "\n";
+
+			return ret;
+		});
+
+		_desc = stream.str();
+		return count == passed;
+	}
+} _NetworkTest;
+
+}

@@ -26,12 +26,6 @@
 #include "SPBytesView.h"
 #include "SPIO.h"
 
-struct gnutls_pubkey_st;
-typedef struct gnutls_pubkey_st *gnutls_pubkey_t;
-
-struct gnutls_privkey_st;
-typedef struct gnutls_privkey_st *gnutls_privkey_t;
-
 namespace stappler {
 
 struct CoderSource {
@@ -131,21 +125,6 @@ struct CoderSource {
 namespace stappler::crypto {
 
 class PublicKey;
-
-enum class SignAlgorithm {
-	RSA_SHA256,
-	RSA_SHA512,
-	ECDSA_SHA256,
-	ECDSA_SHA512,
-};
-
-enum class KeyBits {
-	_1024,
-	_2048,
-	_4096
-};
-
-using AesKey = std::array<uint8_t, 32>;
 
 /* SHA-2 512-bit context
  * designed for chain use: Sha512().update(input).final() */

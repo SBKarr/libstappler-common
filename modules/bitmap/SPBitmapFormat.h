@@ -75,7 +75,7 @@ StringView getMimeType(StringView);
 bool check(FileFormat, const uint8_t * data, size_t dataLen);
 bool check(StringView, const uint8_t * data, size_t dataLen);
 
-uint8_t getBytesPerPixel(PixelFormat c) {
+inline uint8_t getBytesPerPixel(PixelFormat c) {
 	switch (c) {
 	case PixelFormat::A8: return 1; break;
 	case PixelFormat::I8: return 1; break;

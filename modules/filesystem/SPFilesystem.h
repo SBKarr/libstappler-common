@@ -21,8 +21,8 @@
  **/
 
 
-#ifndef COMMON_UTILS_SPFILESYSTEM_H_
-#define COMMON_UTILS_SPFILESYSTEM_H_
+#ifndef MODULES_FILESYSTEM_SPFILESYSTEM_H_
+#define MODULES_FILESYSTEM_SPFILESYSTEM_H_
 
 #include "SPFilepath.h"
 #include "SPIO.h"
@@ -420,4 +420,4 @@ struct ProducerTraits<filesystem::File> {
 
 }
 
-#endif /* COMMON_UTILS_SPFILESYSTEM_H_ */
+#endif /* MODULES_FILESYSTEM_SPFILESYSTEM_H_ */

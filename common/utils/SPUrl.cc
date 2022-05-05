@@ -77,17 +77,29 @@ static bool validateHost(StringView &r) {
 			}
 			if (c.is<StringView::Compose<StringView::CharGroup<CharGroupId::Alphanumeric>, chars::UniChar>>()) {
 				StringView h(r);
-				h.readUntil<chars::UniChar>();
+
 				if (!h.empty()) {
-					auto h = r;
-					auto domain = h.backwardReadUntil<StringView::Chars<'.'>>();
-					if (h.back() == '.' && !domain.empty()) {
+					StringView domain;
+					while (!h.empty()) {
+						domain = h.readUntil<StringView::Chars<'.'>>();
+						if (h.is('.')) {
+							++ h;
+						}
+
+						if (domain.empty()) {
+							return false;
+						}
+					}
+
+					if (!domain.empty()) {
 						auto tmp = domain;
 						tmp.skipChars<StringView::CharGroup<CharGroupId::Alphanumeric>>();
 						if (!tmp.empty()) {
 							if (UrlView::isValidIdnTld(domain)) {
 								return true;
 							}
+						} else {
+							return true;
 						}
 					}
 				} else {

@@ -1,5 +1,5 @@
 /**
-Copyright (c) 2017-2022 Roman Katuntsev <sbkarr@stappler.org>
+Copyright (c) 2020-2021 Roman Katuntsev <sbkarr@stappler.org>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,46 +21,12 @@ THE SOFTWARE.
 **/
 
 #include "SPCommon.h"
+#include "SPString.h"
+#include "SPNetworkHandle.h"
 
-#include "SPIO.cc"
-#include "SPMemAlloc.cc"
+#include <curl/curl.h>
 
-#include "SPMemPoolApr.cc"
-#include "SPMemPoolAllocator.cc"
-#include "SPMemPoolHash.cc"
-#include "SPMemPoolInterface.cc"
-#include "SPMemPoolPool.cc"
-#include "SPMemPoolUtils.cc"
+namespace stappler {
 
-#include "SPMemRbtree.cc"
-#include "SPMemUuid.cc"
 
-#include "SPBase64.cc"
-#include "SPCharGroup.cc"
-#include "SPSha2.cc"
-#include "SPString.cc"
-#include "SPUnicode.cc"
-#include "SPHtmlParser.cc"
-
-#include "SPMemUserData.cc"
-#include "SPTime.cc"
-#include "SPRef.cc"
-#include "SPLog.cc"
-
-#ifdef MODULE_COMMON_DATA
-#include "SPData.cc"
-#include "SPDataUrlencoded.cc"
-#endif
-
-#include "SPUrl.cc"
-#include "SPValid.cc"
-
-#ifdef MODULE_COMMON_IDN
-#include "SPIdn.cc"
-#endif
-
-#ifdef MODULE_COMMON_CRYPTO
-#include "SPCrypto.cc"
-#include "SPCrypto-gnutls.cc"
-#include "SPCrypto-openssl.cc"
-#endif
+}

@@ -20,8 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 **/
 
-#ifndef COMPONENTS_COMMON_UTILS_THREADS_SPTHREADTASKQUEUE_H_
-#define COMPONENTS_COMMON_UTILS_THREADS_SPTHREADTASKQUEUE_H_
+#ifndef MODULES_THREADS_SPTHREADTASKQUEUE_H_
+#define MODULES_THREADS_SPTHREADTASKQUEUE_H_
 
 #include "SPThreadTask.h"
 
@@ -46,6 +46,8 @@ struct ThreadInfo {
 
 class TaskQueue : public RefBase<memory::StandartInterface> {
 public:
+	using Ref = RefBase<memory::StandartInterface>;
+
 	enum class Flags {
 		None = 0,
 
@@ -118,7 +120,7 @@ protected:
 
 	std::mutex _outputMutex;
 	std::vector<Rc<Task>> _outputQueue;
-	std::vector<Pair<Function<void()>, Rc<Ref>>> _outputCallbacks;
+	std::vector<Pair<std::function<void()>, Rc<Ref>>> _outputCallbacks;
 
 	std::atomic<size_t> _outputCounter = 0;
 	std::atomic<size_t> _tasksCounter = 0;
@@ -131,7 +133,7 @@ protected:
 SP_DEFINE_ENUM_AS_MASK(TaskQueue::Flags)
 
 /* Interface for thread workers or handlers */
-class ThreadHandlerInterface : public Ref {
+class ThreadHandlerInterface : public RefBase<memory::StandartInterface> {
 public:
 	virtual ~ThreadHandlerInterface() { }
 
@@ -144,4 +146,4 @@ public:
 
 }
 
-#endif /* COMPONENTS_COMMON_UTILS_THREADS_SPTHREADTASKQUEUE_H_ */
+#endif /* MODULES_THREADS_SPTHREADTASKQUEUE_H_ */
