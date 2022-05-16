@@ -103,10 +103,10 @@ public:
 	// struct to pass identity data to fingerprinting algorithm
 	struct Fingerprint {
 		BytesView fpb;
-		typename Interface::FunctionType<void(string::Sha512 &ctx)> cb = nullptr;
+		typename Interface::template FunctionType<void(string::Sha512 &ctx)> cb = nullptr;
 
 		Fingerprint(BytesView v) : fpb(v) { }
-		Fingerprint(typename Interface::FunctionType<void(string::Sha512 &ctx)> &&cb) : cb(move(cb)) { }
+		Fingerprint(typename Interface::template FunctionType<void(string::Sha512 &ctx)> &&cb) : cb(move(cb)) { }
 	};
 
 	// parse from JsonWebToken source
@@ -136,7 +136,7 @@ protected:
 };
 
 template <typename Interface>
-JsonWebToken<Interface>::SigAlg JsonWebToken<Interface>::getAlg(StringView name) {
+auto JsonWebToken<Interface>::getAlg(StringView name) -> typename JsonWebToken<Interface>::SigAlg  {
 	if (name == "HS256") {
 		return HS256;
 	} else if (name == "HS512") {

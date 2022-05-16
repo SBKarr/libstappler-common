@@ -27,10 +27,11 @@
 
 namespace stappler::thread {
 
-void _workerThread(thread::ThreadHandlerInterface *tm) {
-	tm->threadInit();
-    while (tm->worker()) { }
-    tm->threadDispose();
+void _workerThread(const ThreadCallbacks &cb, void *tm) {
+	cb.init(tm);
+    while (cb.worker(tm)) { }
+	cb.dispose(tm);
+
 }
 
 }

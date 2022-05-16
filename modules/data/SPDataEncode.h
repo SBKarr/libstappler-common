@@ -54,6 +54,8 @@ struct EncodeFormat {
 
 #ifdef MODULE_COMMON_BROTLI_LIB
 		Brotli					= 0b0100 << 4,
+#else
+#warning Module 'common_brotli_lib' is not enabled, data::Value built without Brotli compression support
 #endif
 
 		DefaultCompress = NoCompression

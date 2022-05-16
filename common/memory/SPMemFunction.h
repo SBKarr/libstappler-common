@@ -24,7 +24,6 @@ THE SOFTWARE.
 #define COMMON_MEMORY_SPMEMFUNCTION_H_
 
 #include "SPMemAlloc.h"
-#include <cxxabi.h>
 
 namespace stappler::memory {
 
@@ -209,7 +208,7 @@ private:
 
 			new (buf) (const BaseType *)(mem);
 		}
-		return &makeFunctionTraits<FunctionT>();
+		return &makeFunctionTraits<FunctionT>;
 	}
 
 	void clear() {

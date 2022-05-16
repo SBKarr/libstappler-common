@@ -28,3 +28,8 @@ include $(COMMON_MODULE_DIR)/threads/threads.mk
 include $(COMMON_MODULE_DIR)/idn/idn.mk
 include $(COMMON_MODULE_DIR)/crypto/crypto.mk
 include $(COMMON_MODULE_DIR)/network/network.mk
+include $(COMMON_MODULE_DIR)/threads/threads.mk
+include $(COMMON_MODULE_DIR)/geom/geom.mk
+include $(COMMON_MODULE_DIR)/tess/tess.mk
+include $(COMMON_MODULE_DIR)/zip/zip.mk
+include $(COMMON_MODULE_DIR)/backtrace.mk

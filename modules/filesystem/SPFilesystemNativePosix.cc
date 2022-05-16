@@ -23,6 +23,13 @@ THE SOFTWARE.
 #include "SPCommon.h"
 #include "SPFilesystem.h"
 
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <dirent.h>
+#include <utime.h>
+
 #ifndef __MINGW32__
 
 namespace stappler::filesystem::native {

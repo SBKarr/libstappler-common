@@ -25,8 +25,11 @@ THE SOFTWARE.
 
 #include "SPCommon.h"
 #include "SPTime.h"
-#include "SPData.h"
 #include "Test.h"
+
+#if MODULE_COMMON_DATA
+#include "SPData.h"
+#endif
 
 static constexpr auto HELP_STRING(
 R"HelpString(sptest <options> <test-name|all>
@@ -163,6 +166,7 @@ struct TimeTest : Test {
 	}
 } _TimeTest;
 
+#if MODULE_COMMON_DATA
 int parseOptionSwitch(Value &ret, char c, const char *str) {
 	if (c == 'h') {
 		ret.setBool(true, "help");
@@ -182,8 +186,10 @@ int parseOptionString(Value &ret, const StringView &str, int argc, const char * 
 	}
 	return 1;
 }
+#endif
 
 SP_EXTERN_C int _spMain(argc, argv) {
+#if MODULE_COMMON_DATA
 	Value opts = data::parseCommandLineOptions<Interface>(argc, argv,
 			&parseOptionSwitch, &parseOptionString);
 	if (opts.getBool("help")) {
@@ -200,11 +206,10 @@ SP_EXTERN_C int _spMain(argc, argv) {
 #endif
 		std::cout << " Options: " << stappler::data::EncodeFormat::Pretty << opts << "\n";
 	}
+#endif
 
 	auto mempool = memory::pool::create();
 	memory::pool::push(mempool);
-
-	memory::pool::pop();
 
 	if (argc > 1) {
 		if (StringView(argv[1]) == "all") {
@@ -217,6 +222,8 @@ SP_EXTERN_C int _spMain(argc, argv) {
 	} else {
 		Test::RunAll();
 	}
+
+	memory::pool::pop();
 
 	return 0;
 }

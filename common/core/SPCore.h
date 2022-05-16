@@ -63,10 +63,6 @@ THE SOFTWARE.
 #include <assert.h>
 #include <limits.h>
 #include <stddef.h>
-#include <unistd.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
 #include <string>
 #include <vector>
@@ -91,13 +87,7 @@ THE SOFTWARE.
 #include <initializer_list>
 #include <unordered_map>
 #include <unordered_set>
-
-#include <pthread.h>
-
-#include <errno.h>
-#include <dirent.h>
-#include <utime.h>
-
+#include <numbers>
 
 #if __CDT_PARSER__
 // IDE-specific definition
@@ -112,6 +102,8 @@ THE SOFTWARE.
 #define MODULE_COMMON_CRYPTO 1
 #define MODULE_COMMON_BITMAP 1
 #define MODULE_COMMON_THREADS 1
+#define MODULE_COMMON_NETWORK 1
+#define MODULE_COMMON_GEOM 1
 
 #endif
 
@@ -187,8 +179,8 @@ constexpr uint64_t operator"" _tag64 ( const char* str, size_t len) {
 	return stappler::hash::hash64(str, len);
 }
 
-constexpr long double operator"" _to_rad ( long double val ) { return val * M_PI / 180.0; }
-constexpr long double operator"" _to_rad ( unsigned long long int val ) { return val * M_PI / 180.0; }
+constexpr long double operator"" _to_rad ( long double val ) { return val * std::numbers::pi / 180.0; }
+constexpr long double operator"" _to_rad ( unsigned long long int val ) { return val * std::numbers::pi / 180.0; }
 
 // string length (useful for comparation: memcmp(str, "Test", "Test"_len) )
 constexpr size_t operator"" _length ( const char* str, size_t len) { return len; }
@@ -202,11 +194,6 @@ constexpr unsigned long long int operator"" _KiB ( unsigned long long int val ) 
 
 constexpr char16_t operator"" _c16 (unsigned long long int val) { return (char16_t)val; }
 constexpr char operator"" _c8 (unsigned long long int val) { return (char)val; }
-
-template <typename T>
-constexpr auto to_rad(T val) -> T {
-	return T(val) * T(M_PI) / T(180);
-}
 
 namespace stappler {
 
@@ -530,11 +517,16 @@ struct Result {
 	public: \
 		static constexpr bool Name = sizeof(CallTest_ ## Name<T>(0)) == sizeof(success);
 
+}
+
 /*
  * 		Extra math functions
  */
 
-namespace math {
+namespace stappler::math {
+
+constexpr float MATH_FLOAT_SMALL = 1.0e-37f;
+constexpr float MATH_TOLERANCE = 2e-37f;
 
 template<class T, class Compare> constexpr inline
 const T& clamp(const T& v, const T& lo, const T& hi, Compare comp) {
@@ -603,6 +595,16 @@ static constexpr auto align(T size, T boundary) -> T {
 	return (((size) + ((boundary) - 1)) & ~((boundary) - 1));
 }
 
+// convert degrees to radians
+template <typename T>
+constexpr auto to_rad(T val) -> T {
+	return T(val) * std::numbers::pi_v<T> / T(180);
+}
+
+// convert radians to degrees
+template <typename T>
+constexpr auto to_deg(T val) -> T {
+	return T(val) * T(180) / std::numbers::pi_v<T>;
 }
 
 }

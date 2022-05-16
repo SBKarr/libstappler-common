@@ -79,7 +79,7 @@ StringView name(StringView path);
 size_t extensionCount(StringView path);
 
 template <typename Interface>
-auto split(StringView) -> typename Interface::VectorType<StringView>;
+auto split(StringView) -> typename Interface::template VectorType<StringView>;
 
 // merges two path component, removes or adds '/' where needed
 template <typename Interface>
@@ -174,7 +174,7 @@ auto merge(StringView root, StringView path, Args&&... args) {
 }
 
 template <typename Interface>
-auto split(StringView str) -> typename Interface::VectorType<StringView> {
+auto split(StringView str) -> typename Interface::template VectorType<StringView> {
 	typename Interface::VectorType<StringView> ret;
 	StringView s(str);
 	do {

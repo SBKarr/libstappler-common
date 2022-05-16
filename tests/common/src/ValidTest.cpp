@@ -23,9 +23,12 @@ THE SOFTWARE.
 #include "SPCommon.h"
 #include "SPTime.h"
 #include "SPString.h"
-#include "SPData.h"
 #include "SPValid.h"
 #include "Test.h"
+
+#if MODULE_COMMON_DATA
+
+#include "SPData.h"
 
 namespace stappler::app::test {
 
@@ -168,3 +171,5 @@ struct ValidTest : MemPoolTest {
 } _ValidTest;
 
 }
+
+#endif

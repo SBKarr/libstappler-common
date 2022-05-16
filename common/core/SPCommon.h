@@ -27,6 +27,12 @@ THE SOFTWARE.
 #include "SPMemInterface.h"
 #include "SPMemUuid.h"
 
+namespace stappler {
+
+void getBacktrace(size_t offset, const Callback<void(StringView)> &);
+
+}
+
 #if LINUX
 #if DEBUG
 

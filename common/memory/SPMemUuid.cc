@@ -28,26 +28,38 @@ THE SOFTWARE.
 #include "apr_uuid.h"
 #endif
 
+#if WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <winsock.h>
+using pid_t = DWORD;
+#else
+#endif
+
 namespace stappler::memory {
 
 struct UuidState {
 	UuidState() {
-	    struct {
-		/* Add thread id here, if applicable, when we get to pthread or apr */
-	        pid_t pid;
-	        size_t threadId;
-	        struct timeval t;
-	        char hostname[257];
-	    } r;
+		struct {
+			/* Add thread id here, if applicable, when we get to pthread or apr */
+			pid_t pid;
+			size_t threadId;
+			uint64_t time;
+			char hostname[257];
+		} r;
 
-	    r.pid = getpid();
-	    gettimeofday(&r.t, (struct timezone *)0);
+#if WIN32
+		r.pid = GetCurrentProcessId();
+#else
+		r.pid = getpid();
+#endif
+		r.time = Time::now().toMicros();
 
-	    std::hash<std::thread::id> hasher;
-	    r.threadId = hasher(std::this_thread::get_id());
+		std::hash<std::thread::id> hasher;
+		r.threadId = hasher(std::this_thread::get_id());
 
-	    gethostname(r.hostname, 256);
-	    node = stappler::string::Sha256().update(CoderSource((const uint8_t *)&r, sizeof(r))).final();
+		gethostname(r.hostname, 256);
+		node = stappler::string::Sha256().update(CoderSource((const uint8_t*) &r, sizeof(r))).final();
 	}
 
 	int seqnum = 0;

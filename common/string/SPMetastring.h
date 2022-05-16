@@ -29,13 +29,13 @@ namespace stappler::metastring {
 
 template <char... Chars>
 struct metastring {
-	template <typename Interface = memory::DefaultInterface>
+	template <typename Interface>
 	static constexpr auto string() -> typename Interface::StringType { return { Chars ... }; }
 	static constexpr std::array<char, sizeof... (Chars)> std_string() { return { Chars ... }; }
 	static constexpr std::array<char, sizeof... (Chars)> memory_string() { return { Chars ... }; }
 	static constexpr std::array<char, sizeof... (Chars)> array() { return {{ Chars ... }}; }
 
-	template <typename Interface = memory::DefaultInterface>
+	template <typename Interface>
 	auto to_string() -> typename Interface::StringType const { return { Chars ... }; }
 	std::string to_std_string() const { return {Chars ...}; }
 	memory::string to_memory_string() const { return {Chars ...}; }

@@ -24,8 +24,11 @@
 #include "SPCommon.h"
 #include "SPTime.h"
 #include "SPString.h"
-#include "SPCrypto.h"
 #include "Test.h"
+
+#if MODULE_COMMON_NETWORK
+
+#include "SPCrypto.h"
 
 namespace stappler::app::test {
 
@@ -515,3 +518,5 @@ struct CryptoTest : Test {
 } _CryptoTest;
 
 }
+
+#endif

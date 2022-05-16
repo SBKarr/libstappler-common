@@ -29,21 +29,6 @@ namespace stappler::thread {
 
 class Worker;
 
-struct ThreadInfo {
-	static constexpr uint32_t mainThreadId = maxOf<uint32_t>() - 1;
-
-	static ThreadInfo *getThreadLocal();
-	static void setMainThread();
-	static void setThreadInfo(uint32_t, uint32_t, StringView, bool);
-	static void setThreadInfo(StringView);
-
-	uint32_t threadId = 0;
-	uint32_t workerId = 0;
-	StringView name;
-	bool managed = false;
-	bool detouched = false;
-};
-
 class TaskQueue : public RefBase<memory::StandartInterface> {
 public:
 	using Ref = RefBase<memory::StandartInterface>;
@@ -131,18 +116,6 @@ protected:
 };
 
 SP_DEFINE_ENUM_AS_MASK(TaskQueue::Flags)
-
-/* Interface for thread workers or handlers */
-class ThreadHandlerInterface : public RefBase<memory::StandartInterface> {
-public:
-	virtual ~ThreadHandlerInterface() { }
-
-	static void workerThread(ThreadHandlerInterface *tm, const TaskQueue *q);
-
-	virtual void threadInit() { }
-	virtual void threadDispose() { }
-	virtual bool worker() { return false; }
-};
 
 }
 

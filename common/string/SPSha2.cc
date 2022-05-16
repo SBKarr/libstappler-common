@@ -54,7 +54,7 @@ static const u32 K[64] = {
     0x90befffaUL, 0xa4506cebUL, 0xbef9a3f7UL, 0xc67178f2UL
 };
 
-static u32 min(u32 x, u32 y) {
+static u32 sha_min(u32 x, u32 y) {
     return x < y ? x : y;
 }
 
@@ -141,7 +141,7 @@ static void sha_process(sha256_state& md, const void* src, u32 inlen) {
             in        += block_size;
             inlen     -= block_size;
         } else {
-            u32 n = min(inlen, (block_size - md.curlen));
+            u32 n = sha_min(inlen, (block_size - md.curlen));
             memcpy(md.buf + md.curlen, in, n);
             md.curlen += n;
             in        += n;
@@ -214,7 +214,7 @@ static const u64 K[80] =
     0x431d67c49c100d4cULL, 0x4cc5d4becb3e42b6ULL, 0x597f299cfc657e2aULL, 0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL
 };
 
-static u32 min(u32 x, u32 y) {
+static u32 sha_min(u32 x, u32 y) {
     return x < y ? x : y;
 }
 
@@ -304,7 +304,7 @@ static void sha_process(sha512_state& md, const void* src, u32 inlen) {
             in        += block_size;
             inlen     -= block_size;
         } else {
-            u32 n = min(inlen, (block_size - md.curlen));
+            u32 n = sha_min(inlen, (block_size - md.curlen));
             memcpy(md.buf + md.curlen, in, n);
             md.curlen += n;
             in        += n;

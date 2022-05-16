@@ -59,6 +59,27 @@ struct InterfaceForString<typename memory::PoolInterface::WideStringType> {
 };
 
 
+template <>
+struct InterfaceForString<const typename memory::StandartInterface::StringType> {
+	using Type = memory::StandartInterface;
+};
+
+template <>
+struct InterfaceForString<const typename memory::StandartInterface::WideStringType> {
+	using Type = memory::StandartInterface;
+};
+
+template <>
+struct InterfaceForString<const typename memory::PoolInterface::StringType> {
+	using Type = memory::PoolInterface;
+};
+
+template <>
+struct InterfaceForString<const typename memory::PoolInterface::WideStringType> {
+	using Type = memory::PoolInterface;
+};
+
+
 char16_t utf8Decode(char_const_ptr_ref_t utf8);
 char16_t utf8HtmlDecode(char_const_ptr_ref_t utf8);
 

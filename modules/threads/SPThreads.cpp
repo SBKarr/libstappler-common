@@ -21,7 +21,126 @@
  **/
 
 #include "SPCommon.h"
+#include "SPThread.h"
+
+namespace stappler::thread {
+
+struct ThreadCallbacks {
+	void (*init) (void *);
+	void (*dispose) (void *);
+	bool (*worker) (void *);
+};
+
+void _workerThread(const ThreadCallbacks &tm, void *);
+
+static std::atomic<uint32_t> s_threadId(1);
+
+static uint32_t getNextThreadId() {
+	auto id = s_threadId.fetch_add(1);
+	return (id % 0xFFFF) + (1 << 16);
+}
+
+thread_local const void *tl_owner = nullptr;
+
+template <>
+const void *ThreadInterface<memory::StandartInterface>::getOwner() {
+	return tl_owner;
+}
+
+template <>
+const void *ThreadInterface<memory::PoolInterface>::getOwner() {
+	return tl_owner;
+}
+
+template <>
+void ThreadInterface<memory::StandartInterface>::workerThread(ThreadInterface<memory::StandartInterface> *tm, const void *q) {
+	tl_owner = q;
+
+	ThreadCallbacks cb;
+	cb.init = [] (void *obj) {
+		((ThreadInterface<memory::StandartInterface> *)obj)->threadInit();
+	};
+
+	cb.dispose = [] (void *obj) {
+		((ThreadInterface<memory::StandartInterface> *)obj)->threadDispose();
+	};
+
+	cb.worker = [] (void *obj) -> bool {
+		return ((ThreadInterface<memory::StandartInterface> *)obj)->worker();
+	};
+
+	_workerThread(cb, tm);
+}
+
+template <>
+void ThreadInterface<memory::PoolInterface>::workerThread(ThreadInterface<memory::PoolInterface> *tm, const void *q) {
+	tl_owner = q;
+
+	ThreadCallbacks cb;
+	cb.init = [] (void *obj) {
+		((ThreadInterface<memory::PoolInterface> *)obj)->threadInit();
+	};
+
+	cb.dispose = [] (void *obj) {
+		((ThreadInterface<memory::PoolInterface> *)obj)->threadDispose();
+	};
+
+	cb.worker = [] (void *obj) -> bool {
+		return ((ThreadInterface<memory::PoolInterface> *)obj)->worker();
+	};
+
+	_workerThread(cb, tm);
+}
+
+}
 
 #include "SPThreads-linux.cc"
 #include "SPThreadTask.cc"
 #include "SPThreadTaskQueue.cc"
+#include "SPEventTaskQueue.cc"
+
+namespace stappler::thread {
+
+thread_local ThreadInfo tl_threadInfo;
+
+ThreadInfo *ThreadInfo::getThreadLocal() {
+	if (!tl_threadInfo.managed) {
+		return nullptr;
+	}
+
+	return &tl_threadInfo;
+}
+
+void ThreadInfo::setMainThread() {
+	tl_threadInfo.threadId = mainThreadId;
+	tl_threadInfo.workerId = 0;
+	tl_threadInfo.name = StringView("Main");
+	tl_threadInfo.managed = true;
+}
+
+void ThreadInfo::setThreadInfo(uint32_t t, uint32_t w, StringView name, bool m) {
+#if LINUX
+	pthread_setname_np(pthread_self(), name.data());
+#endif
+	tl_threadInfo.threadId = t;
+	tl_threadInfo.workerId = w;
+	tl_threadInfo.name = name;
+	tl_threadInfo.managed = m;
+}
+
+void ThreadInfo::setThreadInfo(StringView name) {
+#if LINUX
+	pthread_setname_np(pthread_self(), name.data());
+#endif
+	tl_threadInfo.threadId = 0;
+	tl_threadInfo.workerId = 0;
+	tl_threadInfo.name = name;
+	tl_threadInfo.managed = true;
+	tl_threadInfo.detouched = true;
+}
+
+const TaskQueue *TaskQueue::getOwner() {
+	return (const TaskQueue *)tl_owner;
+}
+
+}

@@ -20,7 +20,7 @@
 
 define emplace_module =
 LOCAL_MODULES += $(1)
-$(eval $(call follow_deps_module,$(1)))
+$(eval $(call follow_deps_module,$(MODULE_$(1))))
 endef
 
 define follow_deps_module =
@@ -44,6 +44,8 @@ $(foreach module,$(LOCAL_MODULES),$(foreach module_name,$(MODULE_$(module)),\
 	$(eval $(call follow_deps_module,$(module_name)))))
 
 GLOBAL_MODULES := $(call unique_modules,$(LOCAL_MODULES))
+
+$(info Enabled modules: $(GLOBAL_MODULES))
 
 $(foreach module,$(GLOBAL_MODULES),$(foreach module_name,$(MODULE_$(module)),\
 	$(eval $(call merge_module,$(module_name)))))

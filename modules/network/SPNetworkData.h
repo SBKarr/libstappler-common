@@ -73,13 +73,13 @@ struct AuthData {
 template <typename Interface>
 struct SendData {
 	template <typename T>
-	using Function = typename Interface::FunctionType<T>;
+	using Function = typename Interface::template FunctionType<T>;
 
 	template <typename T>
-	using Vector = typename Interface::VectorType<T>;
+	using Vector = typename Interface::template VectorType<T>;
 
 	template <typename K, typename V>
-	using Map = typename Interface::MapType<K, V>;
+	using Map = typename Interface::template MapType<K, V>;
 
 	using String = typename Interface::StringType;
 	using Bytes = typename Interface::BytesType;
@@ -104,7 +104,7 @@ struct SendData {
 template <typename Interface>
 struct ProcessData {
 	template <typename T>
-	using Function = typename Interface::FunctionType<T>;
+	using Function = typename Interface::template FunctionType<T>;
 
 	using String = typename Interface::StringType;
 	using StringStream = typename Interface::StringStreamType;
@@ -143,13 +143,13 @@ struct ProcessData {
 template <typename Interface>
 struct ReceiveData {
 	template <typename T>
-	using Function = typename Interface::FunctionType<T>;
+	using Function = typename Interface::template FunctionType<T>;
 
 	template <typename T>
-	using Vector = typename Interface::VectorType<T>;
+	using Vector = typename Interface::template VectorType<T>;
 
 	template <typename K, typename V>
-	using Map = typename Interface::MapType<K, V>;
+	using Map = typename Interface::template MapType<K, V>;
 
 	using String = typename Interface::StringType;
 	using Bytes = typename Interface::BytesType;
@@ -171,13 +171,13 @@ struct ReceiveData {
 template <typename Interface>
 struct HandleData : Interface::AllocBaseType {
 	template <typename T>
-	using Vector = typename Interface::VectorType<T>;
+	using Vector = typename Interface::template VectorType<T>;
 
 	template <typename T>
-	using Function = typename Interface::FunctionType<T>;
+	using Function = typename Interface::template FunctionType<T>;
 
 	template <typename K, typename V>
-	using Map = typename Interface::MapType<K, V>;
+	using Map = typename Interface::template MapType<K, V>;
 
 	using String = typename Interface::StringType;
 	using StringStream = typename Interface::StringStreamType;

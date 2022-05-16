@@ -20,11 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 **/
 
-#ifdef MODULE_COMMON_DATA
 
 #include "SPCommon.h"
-#include "SPData.h"
 #include "Test.h"
+
+#ifdef MODULE_COMMON_DATA
+
+#include "SPData.h"
 
 namespace stappler::app::test {
 
@@ -75,12 +77,14 @@ struct DataTranscodeTest : MemPoolTest {
 			return data == cborData;
 		});
 
+#if MODULE_COMMON_BROTLI_LIB
 		runTest(stream, "Json->CborBrotli", count, passed, [&] {
 			auto data = data::read<Interface>(JsonExampleString);
 			auto cborBytes = data::write(data, EncodeFormat(EncodeFormat::Cbor, EncodeFormat::Brotli));
 			auto cborData = data::read<Interface>(cborBytes);
 			return data == cborData;
 		});
+#endif
 
 		_desc = stream.str();
 

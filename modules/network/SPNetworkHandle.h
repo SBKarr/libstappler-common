@@ -35,12 +35,12 @@ public:
 	using DataType::Vector;
 	using DataType::Function;
 	using DataType::Map;
-	using DataType::String;
-	using DataType::StringStream;
-	using DataType::Bytes;
-	using DataType::Value;
-	using DataType::ProgressCallback;
-	using DataType::IOCallback;
+	using String = typename DataType::String;
+	using StringStream = typename DataType::StringStream;
+	using Bytes = typename DataType::Bytes;
+	using Value = typename DataType::Value;
+	using ProgressCallback = typename DataType::ProgressCallback;
+	using IOCallback = typename DataType::IOCallback;
 
 	Handle() { }
 
@@ -109,8 +109,20 @@ public:
 	bool perform(const Callback<bool(Handle<Interface> *, void *)> &);
 
 protected:
-	typename Interface::VectorType<Pair<Handle<Interface> *, void *>> pending;
+	typename Interface::template VectorType<Pair<Handle<Interface> *, void *>> pending;
 };
+
+}
+
+namespace stappler::mem_std {
+
+using NetworkHandle = network::Handle<memory::StandartInterface>;
+
+}
+
+namespace stappler::mem_pool {
+
+using NetworkHandle = network::Handle<memory::PoolInterface>;
 
 }
 

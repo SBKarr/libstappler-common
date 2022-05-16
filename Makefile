@@ -33,3 +33,5 @@ include $(GLOBAL_ROOT)/make/utils/compiler.mk
 include $(GLOBAL_ROOT)/make/build.mk
 
 all: libcommon
+
+.PHONY: all

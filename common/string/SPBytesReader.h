@@ -64,9 +64,9 @@ public:
 	bool ends_with(const CharType *d, size_t l) const { return (l <= len && memcmp(ptr + (len - l), d, l * sizeof(CharType)) == 0); }
 	bool ends_with(const CharType *d) const { return ends_with(d, std::char_traits<CharType>::length(d)); }
 
-	const CharType *data() const { return ptr; }
+	constexpr const CharType *data() const { return ptr; }
 
-	size_t size() const { return len; }
+	constexpr size_t size() const { return len; }
 
 	size_t find(const CharType *s, size_t pos, size_t n) const;
 	size_t find(CharType c, size_t pos = 0) const;

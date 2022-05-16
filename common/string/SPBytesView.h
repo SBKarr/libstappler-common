@@ -40,17 +40,24 @@ public:
 	using PoolBytes = typename memory::PoolInterface::BytesType;
 	using StdBytes = typename memory::StandartInterface::BytesType;
 
-	BytesViewTemplate();
-	BytesViewTemplate(const uint8_t *p, size_t l);
+	constexpr BytesViewTemplate();
+	constexpr BytesViewTemplate(const uint8_t *p, size_t l);
+	constexpr BytesViewTemplate(StringView);
+
 	BytesViewTemplate(const PoolBytes &vec);
 	BytesViewTemplate(const StdBytes &vec);
-	BytesViewTemplate(StringView);
 
 	template <size_t Size>
-	BytesViewTemplate(const std::array<uint8_t, Size> &arr);
+	constexpr BytesViewTemplate(const std::array<uint8_t, Size> &arr);
 
 	template<Endian OtherEndianess>
-	BytesViewTemplate(const BytesViewTemplate<OtherEndianess> &vec);
+	constexpr BytesViewTemplate(const BytesViewTemplate<OtherEndianess> &vec);
+
+	template<Endian OtherEndianess>
+	constexpr BytesViewTemplate(const BytesViewTemplate<OtherEndianess>, size_t len);
+
+	template<Endian OtherEndianess>
+	constexpr BytesViewTemplate(const BytesViewTemplate<OtherEndianess>, size_t pos, size_t len);
 
 	Self & operator =(const PoolBytes &b);
 	Self & operator =(const StdBytes &b);
@@ -72,6 +79,8 @@ public:
 
 	template <typename Interface>
 	auto bytes() const -> typename Interface::BytesType;
+
+	constexpr Self sub(size_t pos = 0, size_t len = maxOf<size_t>()) const { return Self(*this, pos, len); }
 
 private:
 	template <typename T>
@@ -100,10 +109,10 @@ using BytesViewNetwork = BytesViewTemplate<Endian::Network>;
 using BytesViewHost = BytesViewTemplate<Endian::Host>;
 
 template <Endian Endianess>
-BytesViewTemplate<Endianess>::BytesViewTemplate() { }
+inline constexpr BytesViewTemplate<Endianess>::BytesViewTemplate() { }
 
 template <Endian Endianess>
-BytesViewTemplate<Endianess>::BytesViewTemplate(const uint8_t *p, size_t l)
+inline constexpr BytesViewTemplate<Endianess>::BytesViewTemplate(const uint8_t *p, size_t l)
 : BytesReader(p, l) { }
 
 template <Endian Endianess>
@@ -115,17 +124,28 @@ BytesViewTemplate<Endianess>::BytesViewTemplate(const StdBytes &vec)
 : BytesReader(vec.data(), vec.size()) { }
 
 template <Endian Endianess>
-BytesViewTemplate<Endianess>::BytesViewTemplate(StringView str)
+inline constexpr BytesViewTemplate<Endianess>::BytesViewTemplate(StringView str)
 : BytesReader((const uint8_t *)str.data(), str.size()) { }
 
 template <Endian Endianess>
 template <size_t Size>
-BytesViewTemplate<Endianess>::BytesViewTemplate(const std::array<uint8_t, Size> &arr) : BytesReader(arr.data(), Size) { }
+inline constexpr BytesViewTemplate<Endianess>::BytesViewTemplate(const std::array<uint8_t, Size> &arr)
+: BytesReader(arr.data(), Size) { }
 
 template <Endian Endianess>
 template<Endian OtherEndianess>
-BytesViewTemplate<Endianess>::BytesViewTemplate(const BytesViewTemplate<OtherEndianess> &data)
+inline constexpr BytesViewTemplate<Endianess>::BytesViewTemplate(const BytesViewTemplate<OtherEndianess> &data)
 : BytesReader(data.data(), data.size()) { }
+
+template <Endian Endianess>
+template<Endian OtherEndianess>
+inline constexpr BytesViewTemplate<Endianess>::BytesViewTemplate(const BytesViewTemplate<OtherEndianess> ptr, size_t len)
+: BytesReader(ptr.data(), min(len, ptr.size())) { }
+
+template <Endian Endianess>
+template<Endian OtherEndianess>
+inline constexpr BytesViewTemplate<Endianess>::BytesViewTemplate(const BytesViewTemplate<OtherEndianess> ptr, size_t pos, size_t len)
+: BytesReader(ptr.data() + pos, min(len, ptr.size() - pos)) { }
 
 
 template <Endian Endianess>

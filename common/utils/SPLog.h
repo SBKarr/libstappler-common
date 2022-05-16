@@ -69,7 +69,7 @@ void vtext(const StringView &tag, Args && ... args) {
 
 #define SPASSERT(cond, msg) do { \
 	if (!(cond)) { \
-		if (strlen(msg)) { stappler::log::format("Assert", "%s", msg);} \
+		if (strlen(msg)) { ::stappler::log::format("Assert", "%s", msg);} \
 		assert(cond); \
 	} \
 } while (0)

@@ -66,7 +66,7 @@ HashIndex * HashIndex::next() {
 	return this;
 }
 
-void HashIndex::self(const void **key, ssize_t *klen, void **val) {
+void HashIndex::self(const void **key, size_t *klen, void **val) {
 	if (key) *key = _self->key;
 	if (klen) *klen = _self->klen;
 	if (val) *val = (void *)_self->val;
@@ -103,15 +103,15 @@ static void expand_array(HashTable *ht) {
 	ht->max = new_max;
 }
 
-static uint32_t s_hashfunc_default(const char *char_key, ssize_t *klen, uint32_t hash) {
-	if (*klen == -1) {
+static uint32_t s_hashfunc_default(const char *char_key, size_t *klen, uint32_t hash) {
+	if (*klen == maxOf<size_t>()) {
 		*klen = strlen(char_key);
 	}
 
 	return hash::hash32(char_key, *klen, 0);
 }
 
-static HashEntry **find_entry(HashTable *ht, const void *key, ssize_t klen, const void *val) {
+static HashEntry **find_entry(HashTable *ht, const void *key, size_t klen, const void *val) {
 	HashEntry **hep, *he;
 	unsigned int hash;
 
@@ -180,7 +180,7 @@ HashTable * HashTable::copy(Pool *pool) const {
 	return ht;
 }
 
-void *HashTable::get(const void *key, ssize_t klen) {
+void *HashTable::get(const void *key, size_t klen) {
 	HashEntry *he;
 	he = *find_entry(this, key, klen, NULL);
 	if (he) {
@@ -190,7 +190,7 @@ void *HashTable::get(const void *key, ssize_t klen) {
 	}
 }
 
-void HashTable::set(const void *key, ssize_t klen, const void *val) {
+void HashTable::set(const void *key, size_t klen, const void *val) {
 	HashEntry **hep;
 	hep = find_entry(this, key, klen, val);
 	if (*hep) {

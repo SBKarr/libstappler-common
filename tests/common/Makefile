@@ -28,14 +28,13 @@ LOCAL_EXECUTABLE := testapp
 
 LOCAL_TOOLKIT := $(abspath $(STAPPLER_ROOT)/common.mk)
 
-LOCAL_MODULES := \
-	common_brotli_lib \
+LOCAL_MODULES ?= \
+	common_tess \
+	common_zip \
 	common_data \
-	common_filesystem \
-	common_crypto \
-	common_bitmap \
+	common_brotli_lib \
 	common_threads \
-	common_network
+	common_backtrace
 
 LOCAL_ROOT = .
 

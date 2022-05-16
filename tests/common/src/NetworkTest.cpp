@@ -21,8 +21,11 @@
  **/
 
 #include "SPCommon.h"
-#include "SPNetworkHandle.h"
 #include "Test.h"
+
+#if MODULE_COMMON_NETWORK
+
+#include "SPNetworkHandle.h"
 
 namespace stappler::app::test {
 
@@ -57,3 +60,5 @@ struct NetworkTest : Test {
 } _NetworkTest;
 
 }
+
+#endif

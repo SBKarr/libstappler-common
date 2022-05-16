@@ -26,7 +26,7 @@ namespace stappler::mempool::custom {
 
 static SPUNUSED Allocator *s_global_allocator = nullptr;
 static SPUNUSED Pool *s_global_pool = nullptr;
-static SPUNUSED int s_global_init = 0;
+static SPUNUSED std::atomic<int> s_global_init = 0;
 
 static std::atomic<size_t> s_nPools = 0;
 
@@ -425,7 +425,7 @@ struct StaticHolder {
 } s_global_holder;
 
 void initialize() {
-	if (s_global_init == 0) {
+	if (s_global_init.fetch_add(1) == 0) {
 		if (!s_global_allocator) {
 			s_global_allocator = new Allocator();
 		}
@@ -435,12 +435,10 @@ void initialize() {
 		stappler::memory::pool::push(s_global_pool);
 #endif
 	}
-	++ s_global_init;
 }
 
 void terminate() {
-	-- s_global_init;
-	if (s_global_init == 0) {
+	if (s_global_init.fetch_sub(1) == 1) {
 #ifndef SPAPR
 		stappler::memory::pool::pop();
 #endif

@@ -117,7 +117,7 @@ using stappler::WideStringView;
 using stappler::BytesView;
 using stappler::SpanView;
 
-using AllocBase = stappler::memory::AllocPool;
+using AllocBase = stappler::memory::AllocBase;
 
 using String = std::string;
 using WideString = std::u16string;
@@ -135,11 +135,13 @@ using Map = std::map<K, V, Compare>;
 template <typename T, typename Compare = std::less<void>>
 using Set = std::set<T, Compare>;
 
+template <typename T, typename V>
+using HashMap = std::unordered_map<T, V>;
+
 template <typename T>
 using Function = std::function<T>;
 
-template <typename T>
-using Callback = memory::callback<T>;
+using stappler::Callback;
 
 using stappler::Pair;
 

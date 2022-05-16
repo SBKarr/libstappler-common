@@ -21,12 +21,13 @@ THE SOFTWARE.
 **/
 
 #include "SPThreadTaskQueue.h"
+#include "SPThread.h"
 
 #include <chrono>
 
 namespace stappler::thread {
 
-class Worker : public ThreadHandlerInterface {
+class Worker : public ThreadInterface<memory::StandartInterface> {
 public:
 	struct LocalQueue {
 		std::mutex mutexQueue;
@@ -121,7 +122,7 @@ struct TaskQueue::WorkerContext {
 		if (finalized.load() != true) {
 			if (conditionGeneral) {
 				conditionGeneral->wait(lock);
-			} else {
+			} else if (conditionAny) {
 				conditionAny->wait(lock);
 			}
 		}
@@ -130,7 +131,7 @@ struct TaskQueue::WorkerContext {
 	void notify() {
 		if (conditionGeneral) {
 			conditionGeneral->notify_one();
-		} else {
+		} else if (conditionAny) {
 			conditionAny->notify_one();
 		}
 	}
@@ -138,7 +139,7 @@ struct TaskQueue::WorkerContext {
 	void notifyAll() {
 		if (conditionGeneral) {
 			conditionGeneral->notify_all();
-		} else {
+		} else if (conditionAny) {
 			conditionAny->notify_all();
 		}
 	}
@@ -223,51 +224,7 @@ struct TaskQueue::WorkerContext {
 	}
 };
 
-thread_local ThreadInfo tl_threadInfo;
-static std::atomic<uint32_t> s_threadId(1);
-
-static uint32_t getNextThreadId() {
-	auto id = s_threadId.fetch_add(1);
-	return (id % 0xFFFF) + (1 << 16);
-}
-
-ThreadInfo *ThreadInfo::getThreadLocal() {
-	if (!tl_threadInfo.managed) {
-		return nullptr;
-	}
-
-	return &tl_threadInfo;
-}
-
-void ThreadInfo::setMainThread() {
-	tl_threadInfo.threadId = mainThreadId;
-	tl_threadInfo.workerId = 0;
-	tl_threadInfo.name = StringView("Main");
-	tl_threadInfo.managed = true;
-}
-
-void ThreadInfo::setThreadInfo(uint32_t t, uint32_t w, StringView name, bool m) {
-#if LINUX
-	pthread_setname_np(pthread_self(), name.data());
-#endif
-	tl_threadInfo.threadId = t;
-	tl_threadInfo.workerId = w;
-	tl_threadInfo.name = name;
-	tl_threadInfo.managed = m;
-}
-
-void ThreadInfo::setThreadInfo(StringView name) {
-#if LINUX
-	pthread_setname_np(pthread_self(), name.data());
-#endif
-	tl_threadInfo.threadId = 0;
-	tl_threadInfo.workerId = 0;
-	tl_threadInfo.name = name;
-	tl_threadInfo.managed = true;
-	tl_threadInfo.detouched = true;
-}
-
-class _SingleTaskWorker : public ThreadHandlerInterface {
+class _SingleTaskWorker : public ThreadInterface<memory::StandartInterface> {
 public:
 	_SingleTaskWorker(const Rc<TaskQueue> &q, Rc<Task> &&task)
 	: _queue(q), _task(std::move(task)), _managerId(getNextThreadId()) { }
@@ -279,10 +236,7 @@ public:
 	}
 
 	virtual void threadInit() override {
-		tl_threadInfo.threadId = _managerId;
-		tl_threadInfo.workerId = 0;
-		tl_threadInfo.name = StringView("Worker");
-		tl_threadInfo.managed = true;
+		ThreadInfo::setThreadInfo(_managerId, 0, "Worker", true);
 	}
 
 	virtual bool worker() override {
@@ -313,17 +267,6 @@ protected:
 	uint32_t _managerId;
 };
 
-thread_local const TaskQueue *tl_owner = nullptr;
-
-void ThreadHandlerInterface::workerThread(ThreadHandlerInterface *tm, const TaskQueue *q) {
-	tl_owner = q;
-	_workerThread(tm);
-}
-
-const TaskQueue *TaskQueue::getOwner() {
-	return tl_owner;
-}
-
 TaskQueue::TaskQueue(StringView name, std::function<void()> &&wakeup)
 : _wakeup(move(wakeup)) {
 	_inputQueue.setQueueLocking(_inputMutexQueue);
@@ -337,15 +280,18 @@ TaskQueue::TaskQueue(StringView name, std::function<void()> &&wakeup)
 }
 
 TaskQueue::~TaskQueue() {
-	cancelWorkers();
+	if (_context) {
+		cancelWorkers();
+		update();
+	}
 
 	_inputQueue.foreach([&] (memory::PriorityQueue<Rc<Task>>::PriorityType p, const Rc<Task> &t) {
-		t->setSuccessful(false);
-		t->onComplete();
+		if (t) {
+			t->setSuccessful(false);
+			t->onComplete();
+		}
 	});
 	_inputQueue.clear();
-
-	update();
 }
 
 void TaskQueue::finalize() {
@@ -357,7 +303,7 @@ void TaskQueue::finalize() {
 void TaskQueue::performAsync(Rc<Task> &&task) {
 	if (task) {
 		_SingleTaskWorker *worker = new _SingleTaskWorker(this, std::move(task));
-		std::thread wThread(ThreadHandlerInterface::workerThread, worker, this);
+		std::thread wThread(_SingleTaskWorker::workerThread, worker, this);
 		wThread.detach();
 	}
 }
@@ -558,12 +504,14 @@ bool TaskQueue::spawnWorkers(Flags flags, uint32_t threadId, uint16_t threadCoun
 }
 
 bool TaskQueue::cancelWorkers() {
-	if (_context) {
+	if (!_context) {
 		return false;
 	}
 
 	_context->cancel();
+	update();
 	delete _context;
+	_context = nullptr;
 	return true;
 }
 
@@ -624,7 +572,7 @@ Worker::Worker(TaskQueue::WorkerContext *queue, uint32_t threadId, uint32_t work
 	if ((queue->flags & TaskQueue::Flags::LocalQueue) != TaskQueue::Flags::None) {
 		_local = new LocalQueue;
 	}
-	_thread = std::thread(ThreadHandlerInterface::workerThread, this, queue->queue);
+	_thread = std::thread(Worker::workerThread, this, queue->queue);
 }
 
 Worker::~Worker() {
@@ -661,14 +609,7 @@ void Worker::threadInit() {
 	_shouldQuit.test_and_set();
 	_threadId = std::this_thread::get_id();
 
-	tl_threadInfo.threadId = _managerId;
-	tl_threadInfo.workerId = _workerId;
-	tl_threadInfo.name = _name;
-	tl_threadInfo.managed = true;
-
-#if LINUX
-	pthread_setname_np(pthread_self(), _name.data());
-#endif
+	ThreadInfo::setThreadInfo(_managerId, _workerId, _name, true);
 }
 
 void Worker::threadDispose() {

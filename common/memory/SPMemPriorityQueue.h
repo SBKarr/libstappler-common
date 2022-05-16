@@ -20,7 +20,6 @@
  THE SOFTWARE.
  **/
 
-
 #ifndef COMPONENTS_COMMON_CORE_MEMORY_SPMEMPRIORITYQUEUE_H_
 #define COMPONENTS_COMMON_CORE_MEMORY_SPMEMPRIORITYQUEUE_H_
 
@@ -38,8 +37,8 @@ void PriorityQueue_unlock_std_mutex(void *);
 template <typename Value>
 class PriorityQueue {
 public:
-	static constexpr size_t PreallocatedNodes = 32;
-	static constexpr size_t StorageNodes = 256;
+	static constexpr size_t PreallocatedNodes = 8;
+	static constexpr size_t StorageNodes = 64;
 
 	using LockFnPtr = void (*) (void *);
 	using PriorityType = int32_t;
@@ -264,10 +263,9 @@ protected:
 	void initNodes(Node *first, Node *last, StorageBlock *block) {
 		// make linked-list from continuous region of memory
 		while (first != last) {
-			auto next = first + 1;
-			first->next = next;
+			first->next = first + 1;
 			first->block = block;
-			first = next;
+			first = first->next;
 		}
 		last->next = nullptr;
 		last->block = block;
@@ -289,17 +287,20 @@ protected:
 		std::unique_lock<LockInterface> lock(_queue.lock);
 		if (_queue.first) {
 			ret = _queue.first;
-			_queue.first = ret->next;
-
-			if (ret == _queue.last) { _queue.last = nullptr; }
+			if (_queue.first == _queue.last) {
+				_queue.first = _queue.last = nullptr;
+			} else {
+				_queue.first = ret->next;
+			}
+			ret->next = nullptr;
 		}
 		return ret;
 	}
 
 	void pushNode(Node *node, bool insertFirst) {
 		std::unique_lock<LockInterface> lock(_queue.lock);
+		node->next = nullptr;
 		if (!_queue.first) {
-			node->next = nullptr;
 			_queue.last = _queue.first = node;
 		} else {
 			if (insertFirst) {
@@ -307,7 +308,6 @@ protected:
 					node->next = _queue.first;
 					_queue.first = node;
 				} else if (_queue.last->priority < node->priority) {
-					node->next = nullptr;
 					_queue.last->next = node;
 					_queue.last = node;
 				} else {
@@ -323,7 +323,6 @@ protected:
 					node->next = _queue.first;
 					_queue.first = node;
 				} else if (_queue.last->priority <= node->priority) {
-					node->next = nullptr;
 					_queue.last->next = node;
 					_queue.last = node;
 				} else {
@@ -343,9 +342,10 @@ protected:
 		std::unique_lock<LockInterface> lock(_free.lock);
 		if (_free.first) {
 			ret = _free.first;
-			_free.first = ret->next;
 			if (_free.first == _free.last) {
-				_free.last = nullptr;
+				_free.first = _free.last = nullptr;
+			} else {
+				_free.first = ret->next;
 			}
 		} else {
 			auto block = allocateBlock(lock);
@@ -361,6 +361,7 @@ protected:
 			// return first new node
 			ret = &block->nodes[0];
 		}
+		ret->next = nullptr;
 		if (ret->block) {
 			++ ret->block->used;
 		}

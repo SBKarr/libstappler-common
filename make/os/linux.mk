@@ -20,7 +20,7 @@
 
 OSTYPE_PREBUILT_PATH := libs/linux/x86_64/lib
 OSTYPE_INCLUDE :=  libs/linux/x86_64/include
-OSTYPE_CFLAGS := -DLINUX -Wall -fPIC
+OSTYPE_CFLAGS := -DLINUX -Wall -fPIC # -fsanitize=address
 OSTYPE_CPPFLAGS :=  -Wno-overloaded-virtual -Wno-class-memaccess -frtti
 
 OSTYPE_COMMON_LIBS :=
@@ -40,4 +40,4 @@ OSTYPE_STAPPLER_LIBS += $(OSTYPE_CLI_LIBS) -l:libglfw3.a -l:libfreetype.a \
 OSTYPE_STELLATOR_LIBS := $(OSTYPE_COMMON_LIBS) -l:libfreetype.a -l:libsqlite3.a -lpq -ldl
 
 OSTYPE_LDFLAGS := -Wl,-z,defs -rdynamic -fuse-ld=gold
-OSTYPE_EXEC_FLAGS := -fuse-ld=gold
+OSTYPE_EXEC_FLAGS := -fuse-ld=gold # -fsanitize=address -static-libasan

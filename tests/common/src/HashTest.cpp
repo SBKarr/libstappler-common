@@ -34,7 +34,7 @@ public:
 	virtual StringView getName() const = 0;
 };
 
-using HashFunc = uint32_t (*)(const char *key, ssize_t *klen);
+using HashFunc = uint32_t (*)(const char *key, size_t *klen);
 
 template <typename Value>
 class HashTable;
@@ -178,8 +178,8 @@ public:
 	using Pool = memory::pool_t;
 	using ValueType = HashEntry<Value>;
 
-	using merge_fn = void *(*)(Pool *p, const void *key, ssize_t klen, const void *h1_val, const void *h2_val, const void *data);
-	using foreach_fn = bool (*)(void *rec, const void *key, ssize_t klen, const void *value);
+	using merge_fn = void *(*)(Pool *p, const void *key, size_t klen, const void *h1_val, const void *h2_val, const void *data);
+	using foreach_fn = bool (*)(void *rec, const void *key, size_t klen, const void *value);
 
 	static constexpr auto INITIAL_MAX = 15; /* tunable == 2^n - 1 */
 
@@ -400,7 +400,7 @@ public:
 	}
 
 private:
-	friend class HashIndex<Value>;
+	friend struct HashIndex<Value>;
 
 	static HashEntry<Value> **alloc_array(HashTable *ht, uint32_t max) {
 		return (ValueType **)memory::pool::calloc(ht->pool, max + 1, sizeof(ValueType));

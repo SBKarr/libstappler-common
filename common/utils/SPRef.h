@@ -146,10 +146,14 @@ public:
 	}
 
 	inline Base *get() const {
+#if SP_REF_DEBUG
+		assert(_ptr);
+#endif
 		return _Rc_PtrCast<Base>::cast(_ptr);
 	}
 
 	inline operator Base * () const { return get(); }
+	inline operator bool () const { return _ptr != nullptr; }
 
 	template <typename B, typename std::enable_if<std::is_convertible<Base *, B*>{}>::type* = nullptr>
 	inline operator RcBase<B> () { return RcBase<B>(static_cast<B *>(get())); }
@@ -266,6 +270,18 @@ void RefBase<Interface>::foreachBacktrace(const Callback<void(uint64_t, Time, co
 }
 
 #endif
+
+}
+
+namespace stappler::mem_std {
+
+using Ref = RefBase<memory::StandartInterface>;
+
+}
+
+namespace stappler::mem_pool {
+
+using Ref = RefBase<memory::PoolInterface>;
 
 }
 

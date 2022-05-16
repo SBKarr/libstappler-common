@@ -23,7 +23,7 @@ MODULE_COMMON_NETWORK_SRCS_DIRS := $(COMMON_MODULE_DIR)/network
 MODULE_COMMON_NETWORK_SRCS_OBJS :=
 MODULE_COMMON_NETWORK_INCLUDES_DIRS :=
 MODULE_COMMON_NETWORK_INCLUDES_OBJS := $(COMMON_MODULE_DIR)/network
-MODULE_COMMON_NETWORK_DEPENDS_ON := common_idn common_crypto common_filesystem common_brotli_lib
+MODULE_COMMON_NETWORK_DEPENDS_ON := common_idn common_crypto common_filesystem common_brotli_lib common_data
 
 # module name resolution
 MODULE_common_network := MODULE_COMMON_NETWORK

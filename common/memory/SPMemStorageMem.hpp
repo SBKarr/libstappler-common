@@ -61,9 +61,12 @@ struct mem_small {
 	}
 
 	void drop_unused() {
-		auto s = size();
-		// data is already garbage, bypass -Wclass-memaccess
-		memset((void *)(data() + s), 0, ByteCount - 1 - s * sizeof(Type));
+		const auto unused = storage[ByteCount - 1];
+		if (unused < max_capacity()) {
+			const auto s = max_capacity() - unused;
+			// data is already garbage, bypass -Wclass-memaccess
+			memset((void *)(storage.data() + s * sizeof(Type)), 0, unused * sizeof(Type));
+		}
 	}
 
 	void set_size(size_t s) {

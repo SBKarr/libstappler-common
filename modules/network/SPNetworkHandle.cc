@@ -27,9 +27,12 @@ THE SOFTWARE.
 #include "SPStringView.h"
 #include "SPFilesystem.h"
 #include "SPLog.h"
-#include "SPBitmap.h"
 #include "SPValid.h"
 #include "SPCrypto.h"
+
+#if MODULE_COMMON_BITMAP
+#include "SPBitmap.h"
+#endif
 
 #include <curl/curl.h>
 

@@ -185,13 +185,13 @@ struct Pool {
 	void unlock();
 };
 
-using HashFunc = uint32_t (*)(const char *key, ssize_t *klen);
+using HashFunc = uint32_t (*)(const char *key, size_t *klen);
 
 struct HashEntry {
 	HashEntry *next;
 	uint32_t hash;
 	const void *key;
-	ssize_t klen;
+	size_t klen;
 	const void *val;
 };
 
@@ -202,12 +202,12 @@ struct HashIndex {
 
 	HashIndex * next();
 
-	void self(const void **key, ssize_t *klen, void **val);
+	void self(const void **key, size_t *klen, void **val);
 };
 
 struct HashTable {
-	using merge_fn = void *(*)(Pool *p, const void *key, ssize_t klen, const void *h1_val, const void *h2_val, const void *data);
-	using foreach_fn = bool (*)(void *rec, const void *key, ssize_t klen, const void *value);
+	using merge_fn = void *(*)(Pool *p, const void *key, size_t klen, const void *h1_val, const void *h2_val, const void *data);
+	using foreach_fn = bool (*)(void *rec, const void *key, size_t klen, const void *value);
 
 	Pool *pool;
 	HashEntry **array;
@@ -225,8 +225,8 @@ struct HashTable {
 
 	HashTable *copy(Pool *pool) const;
 
-	void *get(const void *key, ssize_t klen);
-	void set(const void *key, ssize_t klen, const void *val);
+	void *get(const void *key, size_t klen);
+	void set(const void *key, size_t klen, const void *val);
 
 	size_t size() const;
 

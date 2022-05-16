@@ -167,12 +167,12 @@ private:
 public:
 	explicit
 	basic_ostringstream(size_type block = stringbuf_type::mem_type::get_soo_size(), const allocator_type &alloc = allocator_type()) noexcept
-	: ostream_type(), _buf(block, alloc) {
+	: ostream_type(&_buf), _buf(block, alloc) {
 		this->init(&_buf);
 	}
 
 	basic_ostringstream(CharType *ptr, size_type block, const allocator_type &alloc = allocator_type()) noexcept
-	: ostream_type(), _buf(ptr, block, alloc) {
+	: ostream_type(&_buf), _buf(ptr, block, alloc) {
 		this->init(&_buf);
 	}
 

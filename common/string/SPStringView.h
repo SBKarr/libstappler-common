@@ -135,7 +135,7 @@ public:
 	using Base64 = MatchCharGroup<CharGroupId::Base64>;
 
 	template <typename Interface, typename ... Args>
-	static auto merge(Args && ... args) -> Interface::template BasicStringType<CharType>;
+	static auto merge(Args && ... args) -> typename Interface::template BasicStringType<CharType>;
 
 	constexpr StringViewBase();
 	constexpr StringViewBase(const CharType *ptr, size_t len = maxOf<size_t>());
@@ -607,8 +607,8 @@ operator+ (const StringViewBase<C> &l, typename memory::PoolInterface::BasicStri
 
 template <typename _CharType>
 template <typename Interface, typename ... Args>
-auto StringViewBase<_CharType>::merge(Args && ... args) -> Interface::template BasicStringType<CharType> {
-	using StringType = Interface::template BasicStringType<CharType>;
+auto StringViewBase<_CharType>::merge(Args && ... args) -> typename Interface::template BasicStringType<CharType> {
+	using StringType = typename Interface::template BasicStringType<CharType>;
 
 	StringType ret; ret.reserve(_size(forward<Args>(args)...));
 	_merge(ret, forward<Args>(args)...);
@@ -684,7 +684,7 @@ inline constexpr StringViewBase<_CharType>::StringViewBase(const Self &ptr, size
 
 template <>
 constexpr inline StringViewBase<char>::StringViewBase(const char *ptr, size_t len)
-: BytesReader<char>(ptr, (len == maxOf<size_t>())?std::char_traits<char>::length(ptr):len) { }
+: BytesReader<char>(ptr, ptr ? (len == maxOf<size_t>())?std::char_traits<char>::length(ptr):len : 0) { }
 
 template <typename _CharType>
 StringViewBase<_CharType>::StringViewBase(const PoolString &str)

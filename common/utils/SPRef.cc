@@ -25,71 +25,160 @@ THE SOFTWARE.
 #include "SPLog.h"
 #include "SPTime.h"
 
-#ifdef LINUX
-
-#include <sstream>
-#include <execinfo.h>
 #include <cxxabi.h>
 
-#ifdef MODULE_COMMON_FILESYSTEM
-#include "SPFilesystem.h"
-#endif
+namespace stappler::backtrace {
 
-namespace stappler::memleak {
+static StringView filepath_lastComponent(StringView path) {
+	size_t pos = path.rfind('/');
+	if (pos != maxOf<size_t>()) {
+		return path.sub(pos + 1);
+	} else {
+		return path;
+	}
+}
+
+static StringView filepath_name(StringView path) {
+	auto cmp = filepath_lastComponent(path);
+
+	size_t pos = cmp.find('.');
+	if (pos == maxOf<size_t>()) {
+		return cmp;
+	} else {
+		return cmp.sub(0, pos);
+	}
+}
+
+static size_t print(char *buf, size_t bufLen, uintptr_t pc, StringView filename, int lineno, StringView function) {
+	char *target = buf;
+	auto w = ::snprintf(target, bufLen, "[%p]", (void *)pc);
+	bufLen -= w;
+	target += w;
+
+	if (!filename.empty()) {
+		auto name = filepath_name(filename);
+		if (lineno >= 0) {
+			w = ::snprintf(target, bufLen, " %.*s:%d", int(name.size()), name.data(), lineno);
+		} else {
+			w = ::snprintf(target, bufLen, " %.*s", int(name.size()), name.data());
+		}
+		bufLen -= w;
+		target += w;
+	}
+
+	if (!function.empty()) {
+		int status = 0;
+		auto ptr = abi::__cxa_demangle(function.data(), nullptr, nullptr, &status);
+		if (ptr) {
+			w = ::snprintf(target, bufLen, " - %s", ptr);
+			bufLen -= w;
+			target += w;
+			::free(ptr);
+		} else {
+			w = ::snprintf(target, bufLen, " - %.*s", int(function.size()), function.data());
+			bufLen -= w;
+			target += w;
+		}
+	}
+	return target - buf;
+}
+
+}
+
+#if MODULE_COMMON_BACKTRACE
+
+#include "backtrace.h"
+
+namespace stappler {
+
+static void debug_backtrace_error(void *data, const char *msg, int errnum) {
+	std::cout << "[Backtrace] error: " << msg << "\n";
+}
+
+static int debug_backtrace_full_callback(void *data, uintptr_t pc, const char *filename, int lineno, const char *function) {
+	if (pc != 0xffffffffffffffffLLU) {
+		auto ret = (const Callback<void(StringView)> *)data;
+		char buf[1024] = { 0 };
+		auto size = backtrace::print(buf, 1024, pc, filename, lineno, function);
+		(*ret)(StringView(buf, size));
+	}
+	return 0;
+}
+
+struct BacktraceState {
+	static BacktraceState *getInstance() {
+		static std::mutex s_mutex;
+		static BacktraceState * s_instance = nullptr;
+
+		s_mutex.lock();
+		if (!s_instance) {
+			s_instance = new BacktraceState();
+		}
+		s_mutex.unlock();
+		return s_instance;
+	}
+
+	BacktraceState() {
+		_backtraceState = ::backtrace_create_state(nullptr, 1, debug_backtrace_error, nullptr);
+	}
+
+	void getBacktrace(size_t offset, const Callback<void(StringView)> &cb) {
+		::backtrace_full(_backtraceState, 2 + offset, debug_backtrace_full_callback, debug_backtrace_error, (void *)&cb);
+	}
+
+	::backtrace_state *_backtraceState;
+};
+
+void getBacktrace(size_t offset, const Callback<void(StringView)> &cb) {
+	BacktraceState::getInstance()->getBacktrace(offset, cb);
+}
+
+}
+
+#elif LINUX
+
+#include <execinfo.h>
+
+namespace stappler {
 
 static constexpr int LinuxBacktraceSize = 128;
 static constexpr int LinuxBacktraceOffset = 2;
 
-static std::string filterBacktracePath(StringView path) {
-#ifdef MODULE_COMMON_FILESYSTEM
-	return filepath::replace<memory::StandartInterface>(path, filesystem::currentDir<memory::StandartInterface>(), "/");
-#else
-	return path.str<memory::StandartInterface>();
-#endif
-}
+void getBacktrace(size_t offset, const Callback<void(StringView)> &cb) {
+	void *bt[LinuxBacktraceSize + LinuxBacktraceOffset + offset];
+	char **bt_syms;
+	int bt_size;
 
-static std::vector<std::string> getBacktrace() {
-	std::vector<std::string> ret;
-    void *bt[LinuxBacktraceSize + LinuxBacktraceOffset];
-    char **bt_syms;
-    int bt_size;
+	bt_size = ::backtrace(bt, LinuxBacktraceSize + LinuxBacktraceOffset + offset);
+	bt_syms = ::backtrace_symbols(bt, bt_size);
 
-    bt_size = backtrace(bt, LinuxBacktraceSize + LinuxBacktraceOffset);
-    bt_syms = backtrace_symbols(bt, bt_size);
-    ret.reserve(bt_size - LinuxBacktraceOffset);
+	for (int i = LinuxBacktraceOffset + offset; i < bt_size; i++) {
+		StringView str(bt_syms[i]);
 
-    for (int i = LinuxBacktraceOffset; i < bt_size; i++) {
-    	auto str = filterBacktracePath(bt_syms[i]);
-    	auto first = str.find('(');
-    	auto second = str.rfind('+');
-    	str = str.substr(first + 1, second - first - 1);
+		auto first = str.find('(');
+		auto second = str.rfind('+');
 
-    	int status = 0;
-    	auto ptr = abi::__cxa_demangle (str.data(), nullptr, nullptr, &status);
+		char buf[1024] = { 0 };
+		auto size = backtrace::print(buf, 1024, (uintptr_t) bt[i], StringView(str, first), -1, StringView(str, first + 1, second - first - 1));
 
-    	if (ptr) {
-    		ret.emplace_back(std::string(ptr));
-        	free(ptr);
-    	} else {
-    		ret.emplace_back(std::string(bt_syms[i]));
-    	}
-    }
+		cb(StringView(buf, size));
+	}
 
-    free(bt_syms);
-    return ret;
+	::free(bt_syms);
 }
 
 }
 
 #else
 
-namespace stappler::memleak {
-static Vector<String> getBacktrace() {
-	return Vector<String>();
-}
+namespace stappler {
+
+void getBacktrace(size_t offset, const Callback<void(StringView)> &cb) { }
+
 }
 
 #endif
+
 
 namespace stappler::memleak {
 
@@ -110,7 +199,10 @@ uint64_t getNextRefId() {
 
 uint64_t retainBacktrace(const RefBase<memory::StandartInterface> *ptr) {
 	auto id = getNextRefId();
-	auto bt = getBacktrace();
+	std::vector<std::string> bt;
+	getBacktrace(0, [&] (StringView str) {
+		bt.emplace_back(str.str<memory::StandartInterface>());
+	});
 	s_mutex.lock();
 
 	auto it = s_retainStdMap.find(ptr);
@@ -164,7 +256,10 @@ void foreachBacktrace(const RefBase<memory::StandartInterface> *ptr,
 
 uint64_t retainBacktrace(const RefBase<memory::PoolInterface> *ptr) {
 	auto id = getNextRefId();
-	auto bt = getBacktrace();
+	std::vector<std::string> bt;
+	getBacktrace(0, [&] (StringView str) {
+		bt.emplace_back(str.str<memory::StandartInterface>());
+	});
 	s_mutex.lock();
 
 	auto it = s_retainPoolMap.find(ptr);

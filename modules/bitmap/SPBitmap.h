@@ -417,4 +417,16 @@ bool BitmapTemplate<Interface>::loadData(BytesView d, const StrideFn &strideFn) 
 
 }
 
+namespace stappler::mem_std {
+
+using Bitmap = bitmap::BitmapTemplate<memory::StandartInterface>;
+
+}
+
+namespace stappler::mem_pool {
+
+using Bitmap = bitmap::BitmapTemplate<memory::PoolInterface>;
+
+}
+
 #endif /* MODULES_BITMAP_SPBITMAP_H_ */

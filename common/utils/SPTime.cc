@@ -22,6 +22,12 @@ THE SOFTWARE.
 
 #include "SPTime.h"
 
+#if WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#else
+#endif
+
 inline time_t _time() {
 	return time(NULL);
 }
@@ -56,14 +62,22 @@ float TimeStorage::toFloatSeconds() const {
 struct tm TimeStorage::asLocal() const {
 	auto sec = time_t(toSeconds());
 	struct tm tm;
+#if WIN32
+	localtime_s(&tm, &sec);
+#else
 	localtime_r(&sec, &tm);
+#endif
 	return tm;
 }
 
 struct tm TimeStorage::asGmt() const {
 	auto sec = time_t(toSeconds());
 	struct tm tm;
+#if WIN32
+	gmtime_s(&tm, &sec);
+#else
 	gmtime_r(&sec, &tm);
+#endif
 	return tm;
 }
 
@@ -93,13 +107,22 @@ TimeInterval & TimeInterval::operator= (nullptr_t) {
 Time Time::now() {
 #if (SPAPR)
 	return Time(apr_time_now());
+#elif (WIN32)
+    // Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
+    // This magic number is the number of 100 nanosecond intervals since January 1, 1601 (UTC)
+    // until 00:00:00 January 1, 1970
+    static const uint64_t EPOCH = ((uint64_t) 116444736000000000ULL);
+	FILETIME ft;
+	GetSystemTimeAsFileTime(&ft);
+	uint64_t tt = ft.dwHighDateTime;
+	tt <<= 32;
+	tt |= ft.dwLowDateTime;
+	tt /= 10;
+	tt -= EPOCH;
+	return Time(tt);
 #else
 	struct timeval t0;
-#if (_WINDOWS)
-	cocos2d::gettimeofday(&t0, NULL);
-#else
 	gettimeofday(&t0, NULL);
-#endif
 	return Time(t0.tv_sec * 1000000LL + t0.tv_usec);
 #endif
 }
@@ -143,10 +166,18 @@ sp_time_exp_t::sp_time_exp_t(int64_t t, int32_t offset, bool use_localtime) {
 	tm_usec = t % int64_t(SP_USEC_PER_SEC);
 
 	if (use_localtime) {
+#if WIN32
+		localtime_s(&tm, &tt);
+#else
 		localtime_r(&tt, &tm);
+#endif
 		tm_gmt_type = gmt_local;
 	} else {
+#if WIN32
+		gmtime_s(&tm, &tt);
+#else
 		gmtime_r(&tt, &tm);
+#endif
 		tm_gmt_type = gmt_set;
 	}
 
@@ -159,7 +190,7 @@ sp_time_exp_t::sp_time_exp_t(int64_t t, int32_t offset, bool use_localtime) {
 	tm_wday = tm.tm_wday;
 	tm_yday = tm.tm_yday;
 	tm_isdst = tm.tm_isdst;
-#ifndef __MINGW32__
+#ifndef WIN32
 	tm_gmtoff = tm.tm_gmtoff;
 #endif
 }
@@ -227,13 +258,13 @@ int64_t sp_time_exp_t::gmt_geti() const {
 int64_t sp_time_exp_t::ltz_geti() const {
 	time_t t = time(NULL);
 	struct tm lt = {0};
+#if WIN32
+	localtime_s(&lt, &t);
+	return int64_t( geti() - tm_gmtoff * SP_USEC_PER_SEC );
+#else
 	localtime_r(&t, &lt);
-
-	#ifndef __MINGW32__
-		return int64_t( geti() - lt.tm_gmtoff * SP_USEC_PER_SEC );
-	#else
-		return int64_t( geti() - tm_gmtoff * SP_USEC_PER_SEC );
-	#endif
+	return int64_t( geti() - lt.tm_gmtoff * SP_USEC_PER_SEC );
+#endif
 }
 
 /*
@@ -790,7 +821,11 @@ Time Time::fromHttp(StringView r) {
 size_t Time::encodeToFormat(char *buf, size_t bufSize, const char *fmt) const {
 	struct tm tm;
 	time_t tt = toSeconds();
+#if WIN32
+	gmtime_s(&tm, &tt);
+#else
 	gmtime_r(&tt, &tm);
+#endif
 
 	return strftime(buf, bufSize, fmt, &tm);
 }
