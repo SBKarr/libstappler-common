@@ -25,6 +25,8 @@
 
 namespace stappler::geom {
 
+int TessVerboseInfo = std::ios_base::xalloc();
+
 bool EdgeDictNode::operator < (const EdgeDictNode &other) const {
 	if (value.y == other.value.y) {
 		return value.w < other.value.w; // dst.y
@@ -151,11 +153,11 @@ void HalfEdge::joinEdgeLoops(HalfEdge *eOrg, HalfEdge *oPrev) {
 }
 
 HalfEdge *HalfEdge::sym() const {
-	return (HalfEdge *)((char *)this - intptr_t(sizeof(HalfEdge)) * isRight);
+	return (HalfEdge *)((char *)this - sizeof(HalfEdge) * isRight);
 }
 
 uint32_t HalfEdge::getIndex() const {
-	return 0;
+	return ((uintptr_t)this >> 5) % 1024;
 }
 
 void HalfEdge::setOrigin(const Vertex *v) {
@@ -200,13 +202,6 @@ HalfEdge *HalfEdge::getRightLoopPrev() const {
 	return sym()->_originNext;
 }
 
-/*Face *HalfEdge::getLeftFace() const {
-	return _leftFace;
-}
-Face *HalfEdge::getRightFace() const {
-	return _sym->_leftFace;
-}*/
-
 const Vec2 &HalfEdge::getOrgVec() const {
 	return origin;
 }
@@ -216,23 +211,15 @@ const Vec2 &HalfEdge::getDstVec() const {
 }
 
 Edge *HalfEdge::getEdge() const {
-	return (Edge *)((char *)this - sizeof(HalfEdge) * (isRight > 0));
+	return (Edge *)((char *)this - sizeof(HalfEdge) * edgeOffset);
 }
 
 bool HalfEdge::goesLeft() const {
-	if (isRight > 0) {
-		return !((Edge *)((char *)this - sizeof(HalfEdge)))->inverted; // right edge of full edge
-	} else {
-		return ((Edge *)this)->inverted; // left edge of full edge
-	}
+	return ((Edge *)((char *)this - sizeof(HalfEdge) * edgeOffset))->inverted != static_cast<bool>(edgeOffset);
 }
 
 bool HalfEdge::goesRight() const {
-	if (isRight > 0) {
-		return ((Edge *)((char *)this - sizeof(HalfEdge)))->inverted; // right edge of full edge
-	} else {
-		return !((Edge *)this)->inverted; // left edge of full edge
-	}
+	return ((Edge *)((char *)this - sizeof(HalfEdge) * edgeOffset))->inverted == static_cast<bool>(edgeOffset);
 }
 
 void HalfEdge::foreachOnFace(const Callback<void(HalfEdge &)> &cb) {
@@ -251,11 +238,33 @@ void HalfEdge::foreachOnVertex(const Callback<void(HalfEdge &)> &cb) {
 	} while( e != this );
 }
 
+void HalfEdge::foreachOnFace(const Callback<void(const HalfEdge &)> &cb) const {
+	auto e = this;
+	do {
+		cb(*e);
+		e = e->_leftNext;
+	} while( e != this );
+}
+
+void HalfEdge::foreachOnVertex(const Callback<void(const HalfEdge &)> &cb) const {
+	auto e = this;
+	do {
+		cb(*e);
+		e = e->_originNext;
+	} while( e != this );
+}
+
+float HalfEdge::getDirection() const {
+	return getEdge()->direction;
+}
+
 Edge::Edge() {
 	left.isRight = -1;
+	left.edgeOffset = 0;
 	left._originNext = &left;
 	left._leftNext = &right;
 	right.isRight = 1;
+	right.edgeOffset = 1;
 	right._originNext = &right;
 	right._leftNext = &left;
 }
@@ -289,9 +298,8 @@ int16_t Edge::getRightWinding() const {
 	return inverted ? left._realWinding : right._realWinding;
 }
 
-ObjectAllocator::ObjectAllocator(memory::pool_t *pool) : _pool(pool), _vertexes(pool), _edges(pool) {
-	_vertexes.reserve(VertexSetPrealloc); _vertexes.set_memory_persistent(true);
-	_edges.reserve(EdgeSetPrealloc); _edges.set_memory_persistent(true);
+ObjectAllocator::ObjectAllocator(memory::pool_t *pool) : _pool(pool), _vertexes(pool) {
+	_vertexes.reserve(VertexSetPrealloc);
 }
 
 Edge *ObjectAllocator::allocEdge() {
@@ -303,10 +311,7 @@ Edge *ObjectAllocator::allocEdge() {
 	auto node = _freeEdges;
 	_freeEdges = (Edge *)node->node;
 	edge = new (node) Edge();
-	_edges.emplace(edge);
 
-	//edge->left._uniqueIdx = _edgeIdxNext ++;
-	//edge->right._uniqueIdx = _edgeIdxNext ++;
 	return edge;
 }
 
@@ -319,9 +324,9 @@ Vertex *ObjectAllocator::allocVertex() {
 	auto node = _freeVertexes;
 	_freeVertexes = (Vertex *)node->_edge;
 	vertex = new (node) Vertex();
-	vertex->_uniqueIdx = _vertexIdxNext ++;
+	vertex->_uniqueIdx = _vertexes.size();
 
-	_vertexes.emplace(vertex->_uniqueIdx, vertex);
+	_vertexes.emplace_back(vertex);
 
 	return vertex;
 }
@@ -339,36 +344,56 @@ Face *ObjectAllocator::allocFace() {
 }
 
 void ObjectAllocator::releaseEdge(Edge *eDel) {
-	eDel->~Edge();
+	removeEdgeFromVec(_edgesOfInterests, &eDel->left);
+	removeEdgeFromVec(_edgesOfInterests, &eDel->right);
+	removeEdgeFromVec(_faceEdges, &eDel->left);
+	removeEdgeFromVec(_faceEdges, &eDel->right);
 
-	_edges.erase(eDel);
+	eDel->~Edge();
 
 	eDel->node = (EdgeDictNode *)_freeEdges;
 	_freeEdges = eDel;
 }
 
 void ObjectAllocator::releaseVertex(uint32_t vDelId, uint32_t vNewId) {
-	auto it1 = _vertexes.find(vDelId);
-	auto it2 = _vertexes.find(vNewId);
+	auto it1 = _vertexes[vDelId];
+	auto it2 = _vertexes[vNewId];
 
-	if (it1 != _vertexes.end() && it2 != _vertexes.end()) {
-		auto vDel = it1->second;
+	if (it1 && it2) {
+		auto vDel = it1;
 
-		vDel->removeFromList(it2->second);
+		vDel->removeFromList(it2);
 		vDel->~Vertex();
-		_vertexes.erase(it1);
+		_vertexes[vDelId] = nullptr;
 
 		vDel->_edge = (HalfEdge *)_freeVertexes;
 		_freeVertexes = vDel;
 	}
 }
 
-void ObjectAllocator::releaseFace(Face *fDel, Face *newLface) {
-	fDel->removeFromList(newLface);
-	fDel->~Face();
+void ObjectAllocator::releaseVertex(Vertex *vDel) {
+	if (vDel) {
+		_vertexes[vDel->_uniqueIdx] = nullptr;
+		vDel->~Vertex();
 
-	fDel->_next = _freeFaces;
-	_freeFaces = fDel;
+		vDel->_edge = (HalfEdge *)_freeVertexes;
+		_freeVertexes = vDel;
+	}
+}
+
+void ObjectAllocator::trimVertexes() {
+	size_t offset = 0;
+	for (auto it = _vertexes.rbegin(); it != _vertexes.rend(); ++ it) {
+		if (*it == nullptr) {
+			++ offset;
+		} else {
+			break;
+		}
+	}
+
+	if (offset > 0) {
+		_vertexes.resize(_vertexes.size() - offset);
+	}
 }
 
 void ObjectAllocator::preallocateVertexes(uint32_t n) {
@@ -382,6 +407,9 @@ void ObjectAllocator::preallocateVertexes(uint32_t n) {
 		_freeVertexes = vertsMem;
 		(vertsMem + n - 1)->_edge = (HalfEdge *)vtmp;
 	}
+
+	_vertexes.reserve(n);
+	_exportVertexes.reserve(n);
 }
 
 void ObjectAllocator::preallocateEdges(uint32_t n) {
@@ -394,6 +422,17 @@ void ObjectAllocator::preallocateEdges(uint32_t n) {
 		Edge *etmp = _freeEdges;
 		_freeEdges = edgesMem;
 		(edgesMem + n - 1)-> node = (EdgeDictNode *)(etmp);
+	}
+}
+
+void ObjectAllocator::removeEdgeFromVec(memory::vector<HalfEdge *> &vec, HalfEdge *e) {
+	auto eOIt = std::find(vec.begin(), vec.end(), e);
+	if (eOIt != vec.end()) {
+		if (e->_leftNext != e) {
+			*eOIt = e->_leftNext;
+		} else {
+			*eOIt = nullptr;
+		}
 	}
 }
 
@@ -562,16 +601,19 @@ void VertexPriorityQueue::Heap::floatUp(int curr) {
 	}
 }
 
-VertexPriorityQueue::VertexPriorityQueue(memory::pool_t *p, const memory::map<uint32_t, Vertex *> &map)
-: heap(p, map.size()), max(map.size()), pool(p) {
+VertexPriorityQueue::VertexPriorityQueue(memory::pool_t *p, const memory::vector<Vertex *> &vec)
+: heap(p, vec.size()), max(vec.size()), pool(p) {
 	keys = (Key*) memory::pool::palloc(p, max * sizeof(Key));
 
-	for (auto &v : map) {
-		v.second->_queueIdx = insert(v.second);
-		if (v.second->_queueIdx == InvalidHandle) {
-			return;
+	for (auto &v : vec) {
+		if (v) {
+			v->_queueIdx = insert(v);
+			if (v->_queueIdx == InvalidHandle) {
+				return;
+			}
 		}
 	}
+
 	if (init()) {
 		initialized = true;
 	}
@@ -810,7 +852,7 @@ void EdgeDict::update(Vertex *v) {
 	}
 }
 
-const EdgeDictNode * EdgeDict::checkForIntersects(HalfEdge *edge, Vec2 &intersectPoint, IntersectionEvent &ev) const {
+const EdgeDictNode * EdgeDict::checkForIntersects(HalfEdge *edge, Vec2 &intersectPoint, IntersectionEvent &ev, float tolerance) const {
 	if (nodes.empty()) {
 		return nullptr;
 	}
@@ -824,7 +866,9 @@ const EdgeDictNode * EdgeDict::checkForIntersects(HalfEdge *edge, Vec2 &intersec
 	auto simdVec1 = simd::load(org.x, org.y, dst.x, dst.y);
 
 	for (auto &n : nodes) {
-		if (VertEq(n.org, org)) {
+		// overlap check should be made in mergeVertexes
+		// so, should never happen
+		if (VertEq(n.org, org, tolerance)) {
 			if (norm.y == 0.0f && n.norm.y == 0.0f) {
 				// overlap, horizontal
 				// note, sweepline logic means same direction on X
@@ -846,7 +890,7 @@ const EdgeDictNode * EdgeDict::checkForIntersects(HalfEdge *edge, Vec2 &intersec
 					ev = IntersectionEvent::EdgeOverlap1;
 				}
 			} else {
-				if (std::abs(dir - n.edge->direction) < MathPrecision) {
+				if (std::abs(dir - n.edge->direction) < tolerance) {
 					if (dst.x < n.value.z) {
 						intersectPoint = dst;
 						ev = IntersectionEvent::EdgeOverlap2;
@@ -857,8 +901,8 @@ const EdgeDictNode * EdgeDict::checkForIntersects(HalfEdge *edge, Vec2 &intersec
 				}
 			}
 			continue; // common org, not interested
-		} else if (VertEq(n.current(), org)) {
-			if (VertEq(n.current(), n.dst())) {
+		} else if (VertEq(n.current(), org, tolerance)) {
+			if (VertEq(n.current(), n.dst(), tolerance)) {
 				continue; // no intersection, just line end
 			}
 			intersectPoint = event;
@@ -866,7 +910,7 @@ const EdgeDictNode * EdgeDict::checkForIntersects(HalfEdge *edge, Vec2 &intersec
 			return &n;
 		}
 
-		if (VertEq(dst, n.dst())) {
+		if (VertEq(dst, n.dst(), tolerance)) {
 			continue; // common dst
 		}
 
@@ -886,9 +930,9 @@ const EdgeDictNode * EdgeDict::checkForIntersects(HalfEdge *edge, Vec2 &intersec
 
 				if (S > 0.0f && S < 1.0f && T > 0.0f && T < 1.0f) {
 					intersectPoint = Vec2(org.x + S * isect.x, org.y + S * isect.y);
-					if (VertEq(intersectPoint, dst)) {
+					if (VertEq(intersectPoint, dst, tolerance)) {
 						ev = IntersectionEvent::EdgeConnection2; // edge ends on n;
-					} else if (VertEq(intersectPoint, n.dst())) {
+					} else if (VertEq(intersectPoint, n.dst(), tolerance)) {
 						ev = IntersectionEvent::EdgeConnection1; // n ends on edge;
 					} else {
 						ev = IntersectionEvent::Regular;
@@ -918,19 +962,31 @@ const EdgeDictNode * EdgeDict::getEdgeBelow(Edge *e) const {
 }
 
 std::ostream &operator<<(std::ostream &out, const Vertex &v) {
-	out << "Vertex: " << v._origin << "\n";
-	v.foreach([&] (const HalfEdge &e) {
-		Vec2 orgVec = e.origin;
-		Vec2 dstVec = e.sym()->origin;
-		uint32_t orgIdx = e.vertex;
-		uint32_t dstIdx = e.sym()->vertex;
 
-		out << "\tEdge (" << e.getIndex() << ":" << e.sym()->getIndex() << ") : " << orgVec << " - " << dstVec << "\n";
-		out << "\t\tDir: (" << e.getIndex() << "; org: " << orgIdx << "; left: " << e._leftNext->getIndex()
-				<< "; ccw: " << e._originNext->getIndex() << ")\n";
-		out << "\t\tSym: (" << e.sym()->getIndex() << "; org: " << dstIdx << "; left: " << e.sym()->_leftNext->getIndex()
-				<< "; ccw: " << e.sym()->_originNext->getIndex() << ")\n";
-	});
+	switch (VerboseFlag(out.iword( TessVerboseInfo ))) {
+	case VerboseFlag::None:
+		out << "Vertex (" << v._uniqueIdx << ") : " << v._origin;
+		break;
+	case VerboseFlag::General:
+		out << "Vertex (" << v._uniqueIdx << ") : " << v._origin;
+		break;
+	case VerboseFlag::Full:
+		out << "Vertex (" << v._uniqueIdx << ") : " << v._origin << "\n";
+		v.foreach([&] (const HalfEdge &e) {
+			Vec2 orgVec = e.origin;
+			Vec2 dstVec = e.sym()->origin;
+			uint32_t orgIdx = e.vertex;
+			uint32_t dstIdx = e.sym()->vertex;
+
+			out << "\tEdge (" << e.getIndex() << ":" << e.sym()->getIndex() << ") : " << orgVec << " - " << dstVec << "\n";
+			out << "\t\tDir: (" << e.getIndex() << "; org: " << orgIdx << "; left: " << e._leftNext->getIndex()
+					<< "; ccw: " << e._originNext->getIndex() << ")\n";
+			out << "\t\tSym: (" << e.sym()->getIndex() << "; org: " << dstIdx << "; left: " << e.sym()->_leftNext->getIndex()
+					<< "; ccw: " << e.sym()->_originNext->getIndex() << ")\n";
+		});
+		break;
+	}
+
 	return out;
 }
 
@@ -940,12 +996,29 @@ std::ostream &operator<<(std::ostream &out, const HalfEdge &e) {
 	uint32_t orgIdx = e.vertex;
 	uint32_t dstIdx = e.sym()->vertex;
 
-	out << "Edge (" << e.getIndex() << ":" << e.sym()->getIndex() << ") : " << orgVec << " - " << dstVec << "\n";
-	out << "\tDir: (" << e.getIndex() << "; org: " << orgIdx << "; left: " << e._leftNext->getIndex()
-			<< "; ccw: " << e._originNext->getIndex() << ")\n";
-	out << "\tSym: (" << e.sym()->getIndex() << "; org: " << dstIdx << "; left: " << e.sym()->_leftNext->getIndex()
-			<< "; ccw: " << e.sym()->_originNext->getIndex() << ")\n";
+	switch (VerboseFlag(out.iword( TessVerboseInfo ))) {
+	case VerboseFlag::None:
+		out << "Edge (" << e.getIndex() << ":" << e.sym()->getIndex() << ") : " << orgVec << " - " << dstVec;
+		break;
+	case VerboseFlag::General:
+		out << "Edge (" << e.getIndex() << ":" << e.sym()->getIndex() << ") : " << orgVec << " - " << dstVec
+		<< " winding: " << e._realWinding << ":" << e._winding << ";";
+		break;
+	case VerboseFlag::Full:
+		out << "Edge (" << e.getIndex() << ":" << e.sym()->getIndex() << ") : " << orgVec << " - " << dstVec
+			<< " winding: " << e._realWinding << ":" << e._winding << ";\n";
+		out << "\tDir: (" << e.getIndex() << "; org: " << orgIdx << "; left: " << e._leftNext->getIndex()
+				<< "; ccw: " << e._originNext->getIndex() << ")\n";
+		out << "\tSym: (" << e.sym()->getIndex() << "; org: " << dstIdx << "; left: " << e.sym()->_leftNext->getIndex()
+				<< "; ccw: " << e.sym()->_originNext->getIndex() << ")\n";
+		break;
+	}
 	return out;
+}
+
+std::ostream &operator<<(std::ostream &stream, VerboseFlag e) {
+	stream.iword( TessVerboseInfo ) = toInt(e);
+	return stream;
 }
 
 }

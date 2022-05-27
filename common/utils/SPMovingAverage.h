@@ -74,6 +74,12 @@ public:
 
 	size_t size() const { return Count; }
 
+	void reset(const T &value) {
+		for (auto &it : _values) {
+			it = value;
+		}
+	}
+
 protected:
 	size_t _current = 0;
     std::array<T, Count> _values;

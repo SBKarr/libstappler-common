@@ -387,13 +387,14 @@ static void drawArcBegin(LineDrawer &drawer, float x0, float y0, float rx, float
 		const float r_avg = (rx + ry) / 2.0f;
 		const float err = (r_avg - sqrtf(drawer.distanceError)) / r_avg;
 		if (err > M_SQRT1_2 - std::numeric_limits<float>::epsilon()) {
-			const float pts = ceilf(sweepAngle / acos((r_avg - sqrtf(drawer.distanceError)) / r_avg) / 2.0f);
+			const float pts = ceilf(sweepAngle / (acos(err) * 2.0f));
 			EllipseData d{ cx, cy, rx, ry, (rx * rx) / (ry * ry), cos_phi, sin_phi };
 
 			sweepAngle = (sweep ? -1.0f : 1.0f) * sweepAngle;
 
 			const float segmentAngle = sweepAngle / pts;
 
+			uint32_t npts = uint32_t(pts);
 			for (uint32_t i = 0; i < uint32_t(pts); ++ i) {
 				const float sx_ = d.rx * cosf(startAngle + segmentAngle), sy_ = d.ry * sinf(startAngle + segmentAngle);
 				const float sx = d.cx - (sx_ * d.cos_phi - sy_ * d.sin_phi);
@@ -402,18 +403,22 @@ static void drawArcBegin(LineDrawer &drawer, float x0, float y0, float rx, float
 				drawArcRecursive(drawer, d, startAngle, segmentAngle, x0, y0, sx, sy, 0);
 				startAngle += segmentAngle;
 
-				drawer.push(sx, sy);
-				x0 = sx; y0 = sy;
+				if (npts - 1 == i) {
+					drawer.push(x1, y1);
+					x0 = x1; y0 = y1;
+				} else {
+					drawer.push(sx, sy);
+					x0 = sx; y0 = sy;
+				}
 			}
 
 			return;
 		} else {
 			EllipseData d{ cx, cy, rx, ry, (rx * rx) / (ry * ry), cos_phi, sin_phi };
 			drawArcRecursive(drawer, d, startAngle, (sweep ? -1.0f : 1.0f) * sweepAngle, x0, y0, x1, y1, 0);
+			drawer.push(x1, y1);
 		}
 	}
-
-	drawer.push(x1, y1);
 }
 
 LineDrawer::LineDrawer(float e, Rc<Tesselator> &&fill, Rc<Tesselator> &&stroke,
@@ -473,20 +478,10 @@ void LineDrawer::drawCubicBezier(float x1, float y1, float x2, float y2, float x
 }
 void LineDrawer::drawArc(float rx, float ry, float phi, bool largeArc, bool sweep, float x1, float y1) {
 	drawArcBegin(*this, target->point.x, target->point.y, rx, ry, phi, largeArc, sweep, x1, y1);
-	push(x1, y1);
 }
 void LineDrawer::drawClose(bool closed) {
 	if (fill) {
-		if (count > 2) {
-			const float dist = draw_dist_sq(origin[0].x, origin[0].y, target->point.x, target->point.y);
-			if (dist >= distanceError) {
-				fill->pushVertex(fillCursor, target->point);
-			} else {
-				closed = true;
-			}
-		}
-
-		// all filled contours considered as closed
+		fill->pushVertex(fillCursor, target->point);
 		fill->closeContour(fillCursor);
 		closed = true;
 	}

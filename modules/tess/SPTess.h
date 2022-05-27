@@ -42,17 +42,17 @@ enum class Winding {
 struct TessResult {
 	uint32_t nvertexes = 0;
 	uint32_t nfaces = 0;
-	uint32_t nobjects = 0;
 
 	void *target = nullptr;
-	void (*pushVertex) (void *, uint32_t, float x, float y, float vertexValue);
-	void (*pushTriangle) (void *, uint32_t, uint32_t, uint32_t);
+	void (*pushVertex) (void *, uint32_t, const Vec2 &pt, float vertexValue);
+	void (*pushTriangle) (void *, uint32_t[3]);
 };
 
 class Tesselator : public RefBase<memory::StandartInterface> {
 public:
 	struct Cursor {
 		HalfEdge *edge;
+		uint32_t count = 0;
 		bool isClockwise = false; // CCW by default
 		bool closed = false;
 	};
@@ -88,8 +88,8 @@ public:
 	// For example - if you generate multiple symmetric contours with same function - you can write
 	// all contours in place, instead of buffering results or run generation process multiple times
 	Cursor beginContour(bool clockwise = false);
-	void pushVertex(Cursor &, const Vec2 &);
-	void closeContour(Cursor &);
+	bool pushVertex(Cursor &, const Vec2 &);
+	bool closeContour(Cursor &);
 
 	// Output process split into two phases:
 	// 1. Prepare - calculate and tesselate interior regions, assign indexes for faces and vertexes,

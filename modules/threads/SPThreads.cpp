@@ -69,7 +69,9 @@ void ThreadInterface<memory::StandartInterface>::workerThread(ThreadInterface<me
 		return ((ThreadInterface<memory::StandartInterface> *)obj)->worker();
 	};
 
+	memory::pool::initialize();
 	_workerThread(cb, tm);
+	memory::pool::terminate();
 }
 
 template <>
@@ -89,7 +91,9 @@ void ThreadInterface<memory::PoolInterface>::workerThread(ThreadInterface<memory
 		return ((ThreadInterface<memory::PoolInterface> *)obj)->worker();
 	};
 
+	memory::pool::initialize();
 	_workerThread(cb, tm);
+	memory::pool::terminate();
 }
 
 }
