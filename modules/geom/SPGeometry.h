@@ -158,8 +158,9 @@ struct Extent2 {
 	constexpr Extent2& operator= (const Size2 &size) { width = size.width; height = size.width; return *this; }
 	constexpr Extent2& operator= (const Vec2 &other) { width = other.x; height = other.y; return *this; }
 
-	constexpr bool operator==(const Extent2 &other) const { return width == other.width && height == other.height; }
-	constexpr bool operator!=(const Extent2 &other) const { return width != other.width || height != other.height; }
+	constexpr bool operator==(const Extent2 &other) const = default;
+	constexpr bool operator!=(const Extent2 &other) const = default;
+	constexpr auto operator<=>(const Extent2 &other) const = default;
 
 	constexpr operator Size2 () const { return Size2(width, height); }
 };
@@ -189,8 +190,9 @@ struct Extent3 {
 	constexpr Extent3& operator= (const Size3 &size) { width = size.width; height = size.width; depth = size.depth; return *this; }
 	constexpr Extent3& operator= (const Vec3 &other) { width = other.x; height = other.y; depth = other.z; return *this; }
 
-	constexpr bool operator==(const Extent3 &other) const { return width == other.width && height == other.height && depth == other.depth; }
-	constexpr bool operator!=(const Extent3 &other) const { return width != other.width || height != other.height || depth != other.depth; }
+	constexpr bool operator==(const Extent3 &other) const = default;
+	constexpr bool operator!=(const Extent3 &other) const = default;
+	constexpr auto operator<=>(const Extent3 &other) const = default;
 
 	constexpr operator Size3 () const { return Size3(width, height, depth); }
 };

@@ -81,10 +81,12 @@ static void _makeBitmapWriter(BitmapWriter &w, BitmapPoolTarget *target, BitmapT
 	w.height = bmp.height();
 	w.stride = bmp.stride();
 
-	if (target->strideFn) {
+	if (target && target->strideFn) {
 		w.getStride = [] (void *ptr, PixelFormat f, uint32_t w) {
 			return (*((BitmapPoolTarget *)ptr)->strideFn)(f, w);
 		};
+	} else {
+		w.getStride = nullptr;
 	}
 
 	w.push = [] (void *ptr, const uint8_t *data, uint32_t size) {
@@ -117,10 +119,12 @@ static void _makeBitmapWriter(BitmapWriter &w, BitmapStdTarget *target, BitmapTe
 	w.height = bmp.height();
 	w.stride = bmp.stride();
 
-	if (target->strideFn) {
+	if (target && target->strideFn) {
 		w.getStride = [] (void *ptr, PixelFormat f, uint32_t w) {
 			return (*((BitmapPoolTarget *)ptr)->strideFn)(f, w);
 		};
+	} else {
+		w.getStride = nullptr;
 	}
 
 	w.push = [] (void *ptr, const uint8_t *data, uint32_t size) {

@@ -59,6 +59,8 @@ public:
 	SpanView(const std::array<Type, Size> &arr) : ptr(arr.data()), len(arr.size()) { }
 
 	SpanView(const Self &v) : ptr(v.data()), len(v.size()) { }
+	SpanView(const Self &v, size_t len) : ptr(v.data()), len(std::min(len, v.size())) { }
+	SpanView(const Self &v, size_t pos, size_t len) : ptr(v.data() + pos), len(std::min(len, v.size() - pos)) { }
 
 	Self &operator=(const memory::vector<Type> &vec) { ptr = vec.data(); len = vec.size(); return *this; }
 	Self &operator=(const std::vector<Type> &vec) { ptr = vec.data(); len = vec.size(); return *this; }
@@ -133,6 +135,8 @@ public:
 			return hash::hash64((const char *)data(), size() * sizeof(_Type));
 		}
 	}
+
+	Self sub(size_t pos = 0, size_t len = maxOf<size_t>()) const { return Self(*this, pos, len); }
 
 protected:
 	const Type *ptr = nullptr;
