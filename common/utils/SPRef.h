@@ -127,7 +127,14 @@ public:
 #endif
 	}
 
-	inline RcBase & operator = (const nullptr_t &) { doRelease(); _ptr = nullptr; return *this; }
+	inline RcBase & operator = (const nullptr_t &) {
+		doRelease();
+		_ptr = nullptr;
+#if SP_REF_DEBUG
+		_id = 0;
+#endif
+		return *this;
+	}
 	inline RcBase & operator = (const Pointer &value) { set(value); return *this; }
 	inline RcBase & operator = (const Self &v) { set(v._ptr); return *this; }
 	inline RcBase & operator = (Self &&v) {
