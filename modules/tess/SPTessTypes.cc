@@ -1003,14 +1003,37 @@ std::ostream &operator<<(std::ostream &out, const HalfEdge &e) {
 	case VerboseFlag::General:
 		out << "Edge (" << e.getIndex() << ":" << e.sym()->getIndex() << ") : " << orgVec << " - " << dstVec
 		<< " winding: " << e._realWinding << ":" << e._winding << ";";
+		if (e.goesLeft()) {
+			out << " goes left;";
+		} else if (e.goesRight()) {
+			out << " goes right;";
+		} else {
+			out << " unknown direction;";
+		}
 		break;
 	case VerboseFlag::Full:
 		out << "Edge (" << e.getIndex() << ":" << e.sym()->getIndex() << ") : " << orgVec << " - " << dstVec
 			<< " winding: " << e._realWinding << ":" << e._winding << ";\n";
 		out << "\tDir: (" << e.getIndex() << "; org: " << orgIdx << "; left: " << e._leftNext->getIndex()
-				<< "; ccw: " << e._originNext->getIndex() << ")\n";
+				<< "; ccw: " << e._originNext->getIndex() << ")";
+		if (e.goesLeft()) {
+			out << " goes left;";
+		} else if (e.goesRight()) {
+			out << " goes right;";
+		} else {
+			out << " unknown direction;";
+		}
+		out << "\n";
 		out << "\tSym: (" << e.sym()->getIndex() << "; org: " << dstIdx << "; left: " << e.sym()->_leftNext->getIndex()
-				<< "; ccw: " << e.sym()->_originNext->getIndex() << ")\n";
+				<< "; ccw: " << e.sym()->_originNext->getIndex() << ")";
+		if (e.sym()->goesLeft()) {
+			out << " goes left;";
+		} else if (e.sym()->goesRight()) {
+			out << " goes right;";
+		} else {
+			out << " unknown direction;";
+		}
+		out << "\n";
 		break;
 	}
 	return out;

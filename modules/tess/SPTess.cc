@@ -289,11 +289,17 @@ bool Tesselator::Data::tessellateMonoRegion(HalfEdge *edge, uint8_t v) {
 		;
 	lo = up->getLeftLoopPrev();
 
+	//std::cout << "Start: Up: " << *up << "\n";
+	//std::cout << "Start: Lo: " << *lo << "\n";
+
 	up->_mark = v;
 	lo->_mark = v;
 
 	while (up->getLeftLoopNext() != lo) {
 		if (VertLeq(up->getDstVec(), lo->getOrgVec())) {
+			//std::cout << "Lo: " << *lo << "\n";
+			//std::cout << "Up: " << *up << "\n";
+
 			/* up->Dst is on the left.  It is safe to form triangles from lo->Org.
 			 * The EdgeGoesLeft test guarantees progress even when some triangles
 			 * are CW, given that the upper and lower chains are truly monotone.
@@ -311,6 +317,9 @@ bool Tesselator::Data::tessellateMonoRegion(HalfEdge *edge, uint8_t v) {
 			lo = lo->getLeftLoopPrev();
 			lo->_mark = v;
 		} else {
+			//std::cout << "Up: " << *up << "\n";
+			//std::cout << "Lo: " << *lo << "\n";
+
 			/* lo->Org is on the left.  We can make CCW triangles from up->Dst. */
 			while (lo->getLeftLoopNext() != up
 					&& (up->getLeftLoopPrev()->goesRight()
@@ -705,7 +714,8 @@ HalfEdge *Tesselator::Data::pushVertex(HalfEdge *e, const Vec2 &origin, bool clo
 
 HalfEdge *Tesselator::Data::connectEdges(HalfEdge *eOrg, HalfEdge *eDst) {
 	// for triangle cut - eDst->lnext = eOrg
-	HalfEdge *eNew = &allocEdge()->left; // make new edge pair
+	Edge *edge = allocEdge();
+	HalfEdge *eNew = &edge->left; // make new edge pair
 	HalfEdge *eNewSym = eNew->sym();
 	HalfEdge *ePrev = eDst->_originNext->sym();
 	HalfEdge *eNext = eOrg->_leftNext;
@@ -720,6 +730,10 @@ HalfEdge *Tesselator::Data::connectEdges(HalfEdge *eOrg, HalfEdge *eDst) {
 
 	eNew->_originNext = eOrg->sym(); eNext->_originNext = eNew; // org vertex chain
 	eNewSym->_originNext = ePrev->sym(); eDst->_originNext = eNewSym; // dst vertex chain
+
+	std::cout << "Connect: " << *eNew << "\n";
+
+	edge->updateInfo();
 
 	return eNew;
 }

@@ -115,7 +115,7 @@ struct HalfEdge {
 	uint32_t vertex = maxOf<uint32_t>(); // normally, we should not access vertex directly to improve data locality
 	int16_t _realWinding = 0;
 	int16_t isRight : 2 = 0; // -1 or 1
-	int16_t edgeOffset : 2 = 0; // -1 or 1
+	int16_t edgeOffset : 2 = 0; // 0 or 1
 	int16_t _winding : 2 = 0; /* change in winding number when crossing from the right face to the left face */
 	int16_t _mark : 10 = 0;
 
