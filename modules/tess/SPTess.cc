@@ -359,9 +359,10 @@ void Tesselator::Data::sweepVertex(VertexPriorityQueue &pq, EdgeDict &dict, Vert
 
 	auto doConnectEdges = [&] (HalfEdge *source, HalfEdge *target) {
 		if (_verbose != VerboseFlag::None) {
-			std::cout << "Connect: " << source << " - " << target << "\n";
+			std::cout << "\t\tConnect: \n\t\t\t" << *source << "\n\t\t\t" << *target << "\n";
 		}
-		connectEdges(source, target);
+		auto eNew = connectEdges(source->getLeftLoopPrev(), target);
+		_edgesOfInterests.emplace_back(eNew);
 	};
 
 	auto onVertex = [&] (VertexType type, Edge *fullEdge, HalfEdge *e, HalfEdge *eNext) {
@@ -452,9 +453,11 @@ void Tesselator::Data::sweepVertex(VertexPriorityQueue &pq, EdgeDict &dict, Vert
 			// 8. 	then Insert the diagonal connecting v(i) to helper(e, j) in D.
 			// 9. helper(e, j) <- v(i)
 			if (auto edgeBelow = dict.getEdgeBelow(e->_originNext->getEdge())) {
+				std::cout << edgeBelow->edge->left << "\n";
 				if (edgeBelow->helper.type == VertexType::Merge) {
 					doConnectEdges(e, edgeBelow->helper.e1);
 				}
+				std::cout << "\t\t" << *e << "\n";
 				edgeBelow->helper = Helper{e, eNext, type };
 			}
 			break;
@@ -511,11 +514,14 @@ void Tesselator::Data::sweepVertex(VertexPriorityQueue &pq, EdgeDict &dict, Vert
 					}
 
 					std::cout << "\tright-convex: " << e->getDstVec() << " - " << e->getOrgVec() << " - " << e->_originNext->getDstVec()
-						<< " = " << e->_realWinding << "\n";
+						<< " = " << e->_realWinding;
 
 					type = VertexType::Split;
 					if (isWindingInside(_winding, e->_realWinding)) {
+						std::cout << "; Split\n";
 						onVertex(VertexType::Split, fullEdge, e, e->_originNext);
+					} else {
+						std::cout << "\n";
 					}
 				} else {
 					_edgesOfInterests.emplace_back(e);
@@ -523,11 +529,14 @@ void Tesselator::Data::sweepVertex(VertexPriorityQueue &pq, EdgeDict &dict, Vert
 					e->_realWinding = e->_originNext->sym()->_realWinding = e->sym()->_realWinding + e->sym()->_winding;
 
 					std::cout << "\tright: " << e->getDstVec() << " - " << e->getOrgVec() << " - " << e->_originNext->getDstVec()
-						<< " = " << e->_realWinding << "\n";
+						<< " = " << e->_realWinding;
 
 					type = VertexType::Start;
 					if (isWindingInside(_winding, e->_realWinding)) {
+						std::cout << "; Start\n";
 						onVertex(VertexType::Start, fullEdge, e, e->_originNext);
+					} else {
+						std::cout << "\n";
 					}
 				}
 			} else {
@@ -535,11 +544,14 @@ void Tesselator::Data::sweepVertex(VertexPriorityQueue &pq, EdgeDict &dict, Vert
 				e->_realWinding = e->_originNext->sym()->_realWinding;
 
 				std::cout << "\tright-to-left: " << e->getDstVec() << " - " << e->getOrgVec() << " - " << e->_originNext->getDstVec()
-					<< " = " << e->_realWinding << "\n";
+					<< " = " << e->_realWinding;
 
 				type = VertexType::RegularBottom;
 				if (isWindingInside(_winding, e->_realWinding)) {
+					std::cout << "; RegularBottom\n";
 					onVertex(VertexType::RegularBottom, fullEdge, e, e->_originNext);
+				} else {
+					std::cout << "\n";
 				}
 			}
 
@@ -554,38 +566,49 @@ void Tesselator::Data::sweepVertex(VertexPriorityQueue &pq, EdgeDict &dict, Vert
 				}
 			}
 		} else {
+			// remove incoming edge
 			if (e->_originNext->goesRight()) {
 				// left-to-right
 				e->_originNext->sym()->_realWinding = e->_realWinding;
 
 				std::cout << "\tleft-to-right: " << e->getDstVec() << " - " << e->getOrgVec() << " - " << e->_originNext->getDstVec()
-					<< " = " << e->_realWinding << "\n";
+					<< " = " << e->_realWinding;
 
 				type = VertexType::RegularTop;
 				if (isWindingInside(_winding, e->_realWinding)) {
+					std::cout << "; RegularTop\n";
 					onVertex(VertexType::RegularTop, fullEdge, e, e->_originNext);
+				} else {
+					std::cout << "\n";
 				}
+
 			} else {
 				if (AngleIsConvex(e, e->_originNext)) {
 					std::cout << "\tleft-convex: " << e->getDstVec() << " - " << e->getOrgVec() << " - " << e->_originNext->getDstVec()
-						<< " = " << e->_realWinding << "\n";
+						<< " = " << e->_realWinding;
 
 					type = VertexType::Merge;
 					if (isWindingInside(_winding, e->_realWinding)) {
+						std::cout << "; Merge\n";
 						onVertex(VertexType::Merge, fullEdge, e, e->_originNext);
+					} else {
+						std::cout << "\n";
 					}
+
 				} else {
 					std::cout << "\tleft: " << e->getDstVec() << " - " << e->getOrgVec() << " - " << e->_originNext->getDstVec()
-						<< " = " << e->_realWinding << "\n";
+						<< " = " << e->_realWinding;
 
 					type = VertexType::End;
 					if (isWindingInside(_winding, e->_realWinding)) {
+						std::cout << "; End\n";
 						onVertex(VertexType::End, fullEdge, e, e->_originNext);
+					} else {
+						std::cout << "\n";
 					}
 				}
 			}
 
-			// remove incoming edge
 			if (fullEdge->node) {
 				dict.pop(fullEdge->node);
 				fullEdge->node = nullptr;
@@ -599,8 +622,8 @@ void Tesselator::Data::sweepVertex(VertexPriorityQueue &pq, EdgeDict &dict, Vert
 }
 
 HalfEdge *Tesselator::Data::processIntersect(Vertex *v, const EdgeDictNode *edge1, HalfEdge *edge2, Vec2 &intersect, IntersectionEvent ev) {
-	// std::cout << "Intersect: " << edge1->org << " - " << edge1->dst() << " X "
-	//		<< edge2->getOrgVec() << " - " << edge2->getDstVec() << " = " << intersect << "\n";
+	std::cout << "Intersect: " << edge1->org << " - " << edge1->dst() << "  X  "
+			<< edge2->getOrgVec() << " - " << edge2->getDstVec() << " = " << intersect << "\n";
 
 	auto fixDictEdge = [&] (const EdgeDictNode *e) {
 		auto &org = e->edge->getOrgVec();
@@ -759,19 +782,37 @@ Vertex *Tesselator::Data::splitEdge(HalfEdge *eOrg1, HalfEdge *eOrg2, const Vec2
 		v = makeVertex(eNew); // make _sym as origin, because _leftNext will be clockwise
 		v->_origin = vec2;
 
+		auto v2 = _vertexes[eOrg1->sym()->vertex];
+
+		std::cout << *eOrg1 << "\n";
 		HalfEdge::splitEdgeLoops(eOrg1, eNew, v);
+		std::cout << *eNew << "\n";
+
+		if (v2->_edge == eOrg1->sym()) {
+			v2->_edge = eNew->sym();
+		}
 
 		oPrevOrg = eNew;
 		oPrevNew = eOrg1->sym();
+
+		eNew->getEdge()->updateInfo();
 	} while (0);
 
 	do {
+		auto v2 = _vertexes[eOrg2->sym()->vertex];
+
 		// split and join secondary edge
 		HalfEdge *eNew = &allocEdge()->left; // make new edge pair
 
 		HalfEdge::splitEdgeLoops(eOrg2, eNew, v);
 		HalfEdge::joinEdgeLoops(eOrg2, oPrevOrg);
 		HalfEdge::joinEdgeLoops(eNew->sym(), oPrevNew);
+
+		if (v2->_edge == eOrg2->sym()) {
+			v2->_edge = eNew->sym();
+		}
+
+		eNew->getEdge()->updateInfo();
 	} while (0);
 
 	return v;

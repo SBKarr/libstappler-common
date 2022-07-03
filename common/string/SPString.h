@@ -27,6 +27,7 @@ THE SOFTWARE.
 
 namespace stappler::string {
 
+size_t getUtf16Length(char32_t);
 size_t getUtf16Length(const StringView &str);
 size_t getUtf16HtmlLength(const StringView &str);
 size_t getUtf8Length(const WideStringView &str);
@@ -85,10 +86,19 @@ char16_t utf8HtmlDecode(char_const_ptr_ref_t utf8);
 
 bool isValidUtf8(StringView);
 
-template <typename StringType, typename Interface = typename InterfaceForString<StringType>::Type>
+template <typename StringType>
 inline uint8_t utf8Encode(StringType &str, char16_t c);
 
+template <typename StringType>
+inline uint8_t utf8Encode(StringType &str, char32_t c);
+
 inline uint8_t utf8Encode(std::ostream &str, char16_t c) SPINLINE;
+inline uint8_t utf8Encode(std::ostream &str, char32_t c) SPINLINE;
+
+template <typename StringType>
+inline uint8_t utf16Encode(StringType &str, char32_t c);
+
+inline uint8_t utf16Encode(std::basic_ostream<char16_t> &str, char32_t c) SPINLINE;
 
 template <typename StringType, typename Interface = typename InterfaceForString<StringType>::Type>
 StringType &trim(StringType & str);
@@ -122,6 +132,9 @@ auto urldecode(const StringView &data) -> typename Interface::StringType;
 
 template <typename Interface>
 auto toUtf16(const StringView &data) -> typename Interface::WideStringType;
+
+template <typename Interface>
+auto toUtf16(char32_t) -> typename Interface::WideStringType;
 
 template <typename Interface>
 auto toUtf16Html(const StringView &data) -> typename Interface::WideStringType;
@@ -168,6 +181,7 @@ struct StringTraits : public Interface {
 	static String urlencode(const StringView &data);
 	static String urldecode(const StringView &str);
 
+	static WideString toUtf16(char32_t);
 	static WideString toUtf16(const StringView &str);
 	static WideString toUtf16Html(const StringView &str);
 	static String toUtf8(const WideStringView &str);
@@ -440,6 +454,11 @@ inline auto toUtf16(const StringView &data) -> typename Interface::WideStringTyp
 }
 
 template <typename Interface>
+inline auto toUtf16(char32_t ch) -> typename Interface::WideStringType {
+	return StringTraits<Interface>::toUtf16(ch);
+}
+
+template <typename Interface>
 inline auto toUtf16Html(const StringView &data) -> typename Interface::WideStringType {
 	return StringTraits<Interface>::toUtf16Html(data);
 }
@@ -604,6 +623,16 @@ auto StringTraits<Interface>::urldecode(const StringView &str) -> String {
 }
 
 template <typename Interface>
+auto StringTraits<Interface>::toUtf16(char32_t ch) -> WideString {
+	const auto size = string::getUtf16Length(ch);
+	WideString utf16_str; utf16_str.reserve(size);
+
+	utf16Encode(utf16_str, ch);
+
+    return utf16_str;
+}
+
+template <typename Interface>
 auto StringTraits<Interface>::toUtf16(const StringView &utf8_str) -> WideString {
 	const auto size = string::getUtf16Length(utf8_str);
 	WideString utf16_str; utf16_str.reserve(size);
@@ -745,7 +774,7 @@ bool StringTraits<Interface>::isUrlencodeChar(char c) {
 	}
 }
 
-template <typename StringType, typename Interface>
+template <typename StringType>
 uint8_t utf8Encode(StringType &str, char16_t c) {
 	if (c < 0x80) {
 		str.push_back((char)c);
@@ -775,6 +804,88 @@ inline uint8_t utf8Encode(std::ostream &str, char16_t c) {
 		str << ((char)(0x80 | (c >> 6 & 0x3f)));
 		str << ((char)(0x80 | (c & 0x3f)));
 		return 3;
+	}
+}
+
+template <typename StringType>
+uint8_t utf8Encode(StringType &str, char32_t c) {
+	if (c < 0x80) {
+		str.push_back((char)c);
+		return 1;
+	} else if (c < 0x800) {
+		str.push_back((char)(0xc0 | (c >> 6)));
+		str.push_back((char)(0x80 | (c & 0x3f)));
+		return 2;
+	} else if (c < 0xFFFF) {
+		str.push_back((char)(0xe0 | (c >> 12 & 0x0F)));
+		str.push_back((char)(0x80 | (c >> 6 & 0x3f)));
+		str.push_back((char)(0x80 | (c & 0x3f)));
+		return 3;
+	} else if (c < 0x10FFFF) {
+		str.push_back((char)(0xf0 | (c >> 18 & 0x07)));
+		str.push_back((char)(0x80 | (c >> 12 & 0x3F)));
+		str.push_back((char)(0x80 | (c >> 6 & 0x3f)));
+		str.push_back((char)(0x80 | (c & 0x3f)));
+		return 3;
+	} else {
+		// non-unicode char
+		return 0;
+	}
+}
+
+inline uint8_t utf8Encode(std::ostream &str, char32_t c) {
+	if (c < 0x80) {
+		str << ((char)c);
+		return 1;
+	} else if (c < 0x800) {
+		str << ((char)(0xc0 | (c >> 6)));
+		str << ((char)(0x80 | (c & 0x3f)));
+		return 2;
+	} else if (c < 0xFFFF) {
+		str << ((char)(0xe0 | (c >> 12 & 0x0F)));
+		str << ((char)(0x80 | (c >> 6 & 0x3f)));
+		str << ((char)(0x80 | (c & 0x3f)));
+		return 3;
+	} else if (c < 0x10FFFF) {
+		str << ((char)(0xf0 | (c >> 18 & 0x07)));
+		str << ((char)(0x80 | (c >> 12 & 0x3F)));
+		str << ((char)(0x80 | (c >> 6 & 0x3f)));
+		str << ((char)(0x80 | (c & 0x3f)));
+		return 3;
+	} else {
+		// non-unicode char
+		return 0;
+	}
+}
+
+template <typename StringType>
+uint8_t utf16Encode(StringType &str, char32_t c) {
+	if (c <= 0xFFFF) {
+		str.push_back(char16_t(c & 0xFFFF));
+		return 1;
+	} else if (c > 0x0010FFFF) {
+		str.push_back(char16_t(0xFFFD));
+		return 1;
+	} else {
+		c -= 0x0010000UL;
+		str.push_back(char16_t((c >> 10) + 0xD800));
+		str.push_back(char16_t((c & 0x3FFUL) + 0xDC00));
+		return 2;
+	}
+}
+
+uint8_t utf16Encode(std::basic_ostream<char16_t> &str, char32_t c) {
+	if (c <= 0xFFFF) {
+		str << char16_t(c & 0xFFFF);
+		return 1;
+	} else if (c > 0x0010FFFF) {
+		str << char16_t(0xFFFD);
+		return 1;
+	} else {
+		c -= 0x0010000UL;
+		str << char16_t((c >> 10) + 0xD800);
+		str << char16_t((c & 0x3FFUL) + 0xDC00);
+		return 2;
 	}
 }
 

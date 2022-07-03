@@ -29,7 +29,7 @@ int TessVerboseInfo = std::ios_base::xalloc();
 
 bool EdgeDictNode::operator < (const EdgeDictNode &other) const {
 	if (value.y == other.value.y) {
-		return value.w < other.value.w; // dst.y
+		return edge->direction < other.edge->direction;
 	} else {
 		return value.y < other.value.y;
 	}
@@ -38,7 +38,7 @@ bool EdgeDictNode::operator < (const EdgeDictNode &other) const {
 bool EdgeDictNode::operator < (const Edge &other) const {
 	auto &left = other.getLeftVec();
 	if (value.y == left.y) {
-		return value.w < other.getRightVec().y; // dst.y
+		return edge->direction < other.direction; // dst.y
 	} else {
 		return value.y < left.y;
 	}
@@ -46,7 +46,7 @@ bool EdgeDictNode::operator < (const Edge &other) const {
 
 bool EdgeDictNode::operator <= (const EdgeDictNode &other) const {
 	if (value.y == other.value.y) {
-		return value.w < other.value.w || value.w == other.value.w; // dst.y
+		return value.w == other.value.w || edge->direction < other.edge->direction; // dst.y
 	} else {
 		return value.y < other.value.y;
 	}
@@ -801,11 +801,12 @@ EdgeDict::EdgeDict(memory::pool_t *p, uint32_t size) : nodes(p), pool(p) {
 }
 
 const EdgeDictNode * EdgeDict::push(Edge *edge, int16_t windingAbove) {
+	const EdgeDictNode *ret;
 	auto &dst = edge->getDstVec();
 	auto &org = edge->getOrgVec();
 	if (org == event) {
 		auto norm = dst - event;
-		return & (*nodes.emplace(EdgeDictNode{
+		ret = & (*nodes.emplace(EdgeDictNode{
 			event, norm,
 			Vec4(event.x, event.y, dst.x, dst.y),
 			edge, windingAbove,
@@ -813,7 +814,7 @@ const EdgeDictNode * EdgeDict::push(Edge *edge, int16_t windingAbove) {
 		}).first);
 	} else if (dst == event) {
 		auto norm = org - event;
-		return & (*nodes.emplace(EdgeDictNode{
+		ret = & (*nodes.emplace(EdgeDictNode{
 			event, norm,
 			Vec4(event.x, event.y, org.x, org.y),
 			edge, windingAbove,
@@ -821,7 +822,12 @@ const EdgeDictNode * EdgeDict::push(Edge *edge, int16_t windingAbove) {
 		}).first);
 	}
 
-	return nullptr;
+	/*for (auto &it : nodes) {
+		std::cout << "Edge: " << it.org << " - " << Vec2(it.value.z, it.value.w)
+				<< " - " << Vec2(it.value.x, it.value.y) << " - " << it.windingAbove << "\n";
+	}*/
+
+	return ret;
 }
 
 void EdgeDict::pop(const EdgeDictNode *node) {
@@ -866,6 +872,9 @@ const EdgeDictNode * EdgeDict::checkForIntersects(HalfEdge *edge, Vec2 &intersec
 	auto simdVec1 = simd::load(org.x, org.y, dst.x, dst.y);
 
 	for (auto &n : nodes) {
+
+		// std::cout << "checkForIntersects:\n\t" << *edge << "\n\t" << n.org << " - " << n.value << "\n";
+
 		// overlap check should be made in mergeVertexes
 		// so, should never happen
 		if (VertEq(n.org, org, tolerance)) {
@@ -928,7 +937,7 @@ const EdgeDictNode * EdgeDict::checkForIntersects(HalfEdge *edge, Vec2 &intersec
 				//if (S > 0.5f) { S = 1.0f - S; }
 				//if (T > 0.5f) { T = 1.0f - T; }
 
-				if (S > 0.0f && S < 1.0f && T > 0.0f && T < 1.0f) {
+				if (S >= 0.0f && S <= 1.0f && T >= 0.0f && T <= 1.0f) {
 					intersectPoint = Vec2(org.x + S * isect.x, org.y + S * isect.y);
 					if (VertEq(intersectPoint, dst, tolerance)) {
 						ev = IntersectionEvent::EdgeConnection2; // edge ends on n;
@@ -956,8 +965,12 @@ const EdgeDictNode * EdgeDict::getEdgeBelow(Edge *e) const {
 		// first edge in dict greater or equal then e, no edges below
 		return nullptr;
 	} else {
+		-- it;
+		while (it->current() == event) {
+			-- it;
+		}
 		// edge before it is less then e
-		return &(*--it);
+		return &(*it);
 	}
 }
 

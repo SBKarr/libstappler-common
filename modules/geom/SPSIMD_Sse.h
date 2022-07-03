@@ -453,7 +453,7 @@ SP_ATTR_OPTIMIZE_INLINE_FN inline bool isVec2BboxIntersects(const f32x4 & v1, co
 					simde_mm_movehl_ps(maxVec, minVec),
 					minVec) ));
 
-	if (ret.data[0] > 0.0f && ret.data[1] > 0.0f) {
+	if (ret.data[0] >= 0.0f && ret.data[1] >= 0.0f && (ret.data[0] != 0.0f || ret.data[1] != 0.0f)) {
 		return true;
 	}
 	return false;

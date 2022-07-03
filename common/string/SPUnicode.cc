@@ -285,6 +285,14 @@ Pair<char16_t, uint8_t> read(char_const_ptr_t ptr) {
 	return pair((char16_t)ret, len);
 }
 
+size_t getUtf16Length(char32_t ch) {
+	if (ch > 0xFFFF) {
+		return 2;
+	} else {
+		return 1;
+	}
+}
+
 size_t getUtf16Length(const StringView &input) {
 	size_t counter = 0;
 	char_const_ptr_t ptr = input.data();
