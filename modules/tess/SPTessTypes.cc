@@ -1057,4 +1057,9 @@ std::ostream &operator<<(std::ostream &stream, VerboseFlag e) {
 	return stream;
 }
 
+std::ostream &operator<<(std::ostream &stream, const EdgeDictNode &e) {
+	stream << "EdgeDictNode(" << e.org << "; " << e.dst() << ");";
+	return stream;
+}
+
 }

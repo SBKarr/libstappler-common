@@ -27,6 +27,7 @@
 #include "SPCommon.h"
 #include "SPBytesView.h"
 #include "SPIO.h"
+#include "SPLog.h"
 
 namespace stappler::bitmap {
 

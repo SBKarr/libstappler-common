@@ -376,6 +376,7 @@ SP_ATTR_OPTIMIZE_INLINE_FN static inline bool EdgeAngleIsBelowTolerance(float A,
 std::ostream &operator<<(std::ostream &out, const Vertex &v);
 std::ostream &operator<<(std::ostream &out, const HalfEdge &e);
 std::ostream &operator<<(std::ostream &out, VerboseFlag e);
+std::ostream &operator<<(std::ostream &out, const EdgeDictNode &e);
 
 inline bool isWindingInside(Winding w, int16_t n) {
 	switch (w) {

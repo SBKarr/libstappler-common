@@ -117,7 +117,7 @@ const NodeBase * NodeBase::decrement(const NodeBase *c) {
 			c = c->right;
 		}
 	} else {
-		if (c->parent && c->parent->getColor()) {
+		if (c->parent) {
 			if (c->parent->right == c) {
 				c = c->parent;
 			} else {
