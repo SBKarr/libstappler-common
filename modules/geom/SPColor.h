@@ -58,6 +58,18 @@ struct Color3B;
 struct Color4B;
 struct Color4F;
 
+enum class ColorMask : uint8_t {
+	None = 0,
+	R = 0x01,
+	G = 0x02,
+	B = 0x04,
+	A = 0x08,
+	Color = 0x07,
+	All = 0x0F
+};
+
+SP_DEFINE_ENUM_AS_MASK(ColorMask)
+
 bool readColor(const StringView &str, Color4B &color);
 bool readColor(const StringView &str, Color3B &color);
 
@@ -160,6 +172,9 @@ struct alignas(16) Color4F {
 
 	Color3B getColor() const;
 	uint8_t getOpacity() const;
+
+	void setMasked(const Color4F &, ColorMask);
+	void setUnmasked(const Color4F &, ColorMask);
 
 	float r;
 	float g;

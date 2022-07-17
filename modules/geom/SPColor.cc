@@ -1306,6 +1306,20 @@ uint8_t Color4F::getOpacity() const {
 	return uint8_t(a * 255.0f);
 }
 
+void Color4F::setMasked(const Color4F &color, ColorMask mask) {
+	if ((mask & ColorMask::R) != ColorMask::None) { r = color.r; }
+	if ((mask & ColorMask::G) != ColorMask::None) { g = color.g; }
+	if ((mask & ColorMask::B) != ColorMask::None) { b = color.b; }
+	if ((mask & ColorMask::A) != ColorMask::None) { a = color.a; }
+}
+
+void Color4F::setUnmasked(const Color4F &color, ColorMask mask) {
+	if ((mask & ColorMask::R) == ColorMask::None) { r = color.r; }
+	if ((mask & ColorMask::G) == ColorMask::None) { g = color.g; }
+	if ((mask & ColorMask::B) == ColorMask::None) { b = color.b; }
+	if ((mask & ColorMask::A) == ColorMask::None) { a = color.a; }
+}
+
 Color4F Color4F::progress(const Color4F &a, const Color4F &b, float p) {
 	return Color4F(
 		(a.r * (1.0f - p) + b.r * p),
